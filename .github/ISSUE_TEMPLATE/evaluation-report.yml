@@ -1,0 +1,63 @@
+name: Evaluation report
+about: Share a replication, benchmark, comparative test or field evaluation of PPGP.
+title: "[Evaluation] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Independent positive and negative results are welcome. Please describe the setup clearly enough for others to interpret the result.
+  - type: input
+    id: ppgp-version
+    attributes:
+      label: PPGP version
+      placeholder: "0.1"
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent or coding environment
+      placeholder: "Agent, provider/model, IDE or CLI, version if known"
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Evaluation setup
+      description: Describe the task, repository shape, interruption method and any baseline or comparison workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: Summarize what happened, including failures or unexpected overhead.
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Measurements
+      description: Include metrics only when the measurement method is clear. HIG, TPG, RSR, VWR and MCR are optional.
+  - type: dropdown
+    id: recovery
+    attributes:
+      label: Fresh-agent recovery outcome
+      options:
+        - "Successful without human reconstruction"
+        - "Successful with partial human reconstruction"
+        - "Failed"
+        - "Not tested"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or publication
+      description: Link public data, article, benchmark, repository, commits or methodology when available.
+  - type: textarea
+    id: interpretation
+    attributes:
+      label: Interpretation
+      description: What does this result support, contradict or leave unresolved?
