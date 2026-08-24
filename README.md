@@ -19,8 +19,10 @@ It does not replace model memory, Git, tests, MCP or provider-specific compactio
 | --- | --- |
 | Download the installable skill | [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip) |
 | Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
+| Use the PPGP CLI | `npx ppgp init` after the first npm package publication |
 | Understand the protocol | [`SPEC.md`](./SPEC.md) |
 | Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
+| Review distribution channels | [`DISTRIBUTION.md`](./DISTRIBUTION.md) |
 | Report a recovery failure | [Open an issue](../../issues/new/choose) |
 | Contribute | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
 | Cite PPGP | [`CITATION.cff`](./CITATION.cff) |
@@ -77,13 +79,27 @@ GIT            forensic history and implementation evidence
 
 ## Install
 
-PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill.
+PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and now also includes a dependency-free Node.js CLI package source.
 
 ### Agent Skills CLI
 
 ```bash
 npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 ```
+
+### PPGP CLI
+
+The public npm package is prepared as `ppgp` with a `ppgp` executable. Once the first registry publication is complete:
+
+```bash
+npx ppgp init
+npx ppgp doctor
+npx ppgp goal "Ship the next verified milestone"
+npx ppgp status
+npx ppgp handoff
+```
+
+The CLI is deliberately deterministic. It helps inspect, scaffold and recover repository-visible state without pretending to replace agent reasoning, verification, distillation or closure checks.
 
 ### Manual install
 
@@ -99,7 +115,7 @@ The skill contains a compact operational reference in [`skills/ppgp/references/P
 
 ## Operations
 
-The skill exposes six workflow intents:
+The Agent Skill exposes six workflow intents:
 
 ```text
 ppgp init
@@ -110,7 +126,22 @@ ppgp distill
 ppgp close
 ```
 
+The CLI currently implements deterministic helpers for `init`, `doctor`, `goal`, `status`, `handoff`, `skill-path`, and `install-skill`.
+
 These are protocol operations, not assumptions about a vendor-specific slash-command system.
+
+## Distribution
+
+PPGP uses multiple distribution surfaces on purpose:
+
+```text
+GitHub Release   -> direct download
+Agent Skills     -> agent-native installation
+npmjs.com        -> public CLI discovery and zero-install execution
+GitHub Packages  -> package presence inside the GitHub ecosystem
+```
+
+See [`DISTRIBUTION.md`](./DISTRIBUTION.md) for package names, version mapping and publication security.
 
 ## Research and evaluation
 
