@@ -7,9 +7,9 @@
 **License:** MIT  
 **Maturity:** Provisional
 
-PPGP is an open, vendor-neutral workflow for keeping long-running software goals recoverable across context compaction, interrupted sessions, agent replacement, and different coding-agent products.
+PPGP is an open, vendor-neutral workflow for keeping long-running software goals recoverable across context compaction, interrupted sessions, agent replacement and different coding-agent products.
 
-It does not attempt to replace model memory, Git, tests, MCP, or provider-specific compaction. It defines a small control protocol around them.
+It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
 
 ## Why
 
@@ -58,11 +58,29 @@ GIT            forensic history and implementation evidence
 - Keep human escalation for genuine authority boundaries.
 - Use additional agents only when expected information gain exceeds coordination cost.
 - Keep the protocol readable by humans and portable between model vendors.
-- Do not require vector databases, embeddings, MCP, a specific model, or a specific IDE.
+- Do not require vector databases, embeddings, MCP, a specific model or a specific IDE.
 
-## Agent Skill
+## Install
 
 PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill.
+
+### Agent Skills CLI
+
+```bash
+npx skills add https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-/tree/main/skills/ppgp
+```
+
+### Manual install
+
+Download [`ppgp-v0.1.zip`](./dist/ppgp-v0.1.zip), extract it, then copy or upload the `ppgp` skill directory into a client that implements the Agent Skills standard.
+
+### Read without installing
+
+Read [`SPEC.md`](./SPEC.md) for the protocol itself.
+
+The skill contains a compact operational reference in [`skills/ppgp/references/PPGP.md`](./skills/ppgp/references/PPGP.md).
+
+## Operations
 
 The skill exposes six workflow intents:
 
@@ -77,19 +95,34 @@ ppgp close
 
 These are protocol operations, not assumptions about a vendor-specific slash-command system.
 
-### Install with the open `skills` CLI
+## Research and evaluation
 
-```bash
-npx skills add https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-/tree/main/skills/ppgp
-```
+PPGP is experimental.
 
-You can also copy or upload the `skills/ppgp/` directory into any client that implements the Agent Skills standard.
+Independent evaluation, replication, criticism, alternative implementations and failure reports are welcome.
 
-## Specification
+If you evaluate PPGP in research, production or comparative agent testing, identify the exact PPGP version used and publish enough methodology for the result to be independently interpreted.
 
-See [SPEC.md](./SPEC.md).
+Especially useful evidence includes:
 
-The skill contains a compact operational reference in [`skills/ppgp/references/PPGP.md`](./skills/ppgp/references/PPGP.md).
+- whether a fresh agent can recover an active goal without human reconstruction;
+- recovery failures and ambiguous state;
+- documentation overhead created by the protocol;
+- unnecessary human escalations;
+- stale or contradictory memory;
+- cross-agent or cross-provider incompatibilities;
+- smaller representations that preserve recovery quality;
+- measured results from small, large, legacy or multi-agent repositories.
+
+Negative results are useful. PPGP should change when reproducible evidence shows that a simpler or more reliable rule exists.
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+## Citation
+
+Citation metadata is provided in [`CITATION.cff`](./CITATION.cff).
+
+Version-specific citation is strongly preferred. The public GitHub handle is used as the author identifier until real-name citation metadata is added.
 
 ## What v0.1 deliberately does not claim
 
@@ -104,30 +137,22 @@ PPGP v0.1 does **not** claim to:
 
 The purpose of the public v0.1 release is to make the protocol inspectable, reproducible and falsifiable.
 
-## Community testing
-
-Useful feedback includes:
-
-- contexts where the protocol adds too much overhead;
-- cases where a fresh agent cannot resume correctly;
-- memory that becomes stale or contradictory;
-- unnecessary human interruptions;
-- cross-agent incompatibilities;
-- simpler variants that preserve the same recovery quality;
-- examples from small, large, legacy or multi-agent repositories.
-
-No benchmark result is required to contribute.
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
-
 ## Project mission
 
-PPGP is published as a community-oriented open-source project intended to help developers and users get more reliable work from coding agents with less repeated explanation and avoidable supervision.
+PPGP is a community-oriented open-source project intended to help developers and users get more reliable work from coding agents with less repeated explanation and avoidable supervision.
 
-The project may be used commercially under the MIT license. The community/non-profit intent is a project mission, not a restriction on who may use the protocol.
+The project may be used commercially under the MIT license. The community-oriented mission is not a restriction on who may use the protocol.
 
 ## Publication history
 
 PPGP v0.1 was first published publicly on 2026-08-24 in the `Fatboy-coder/fatboy-coder` repository under `/ppgp`.
 
-This repository is now the canonical home of the protocol. The original publication remains available as the first public record of the v0.1 release.
+This repository is now the canonical home of the protocol. The original Git history remains the first public record of the v0.1 release.
+
+## Versioning
+
+PPGP uses semantic specification versions.
+
+`0.x` releases are experimental and may change incompatibly.
+
+Researchers, developers and maintainers should cite the exact version evaluated.
