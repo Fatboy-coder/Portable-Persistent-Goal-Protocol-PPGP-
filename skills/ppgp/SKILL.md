@@ -1,6 +1,6 @@
 ---
 name: ppgp
-description: "Portable Persistent Goal Protocol for long-running coding-agent work. Use when starting, resuming, handing off, distilling, or closing a substantial software goal across long sessions, context compaction, agent replacement, Claude Code, Codex, or other Agent Skills-compatible coding agents."
+description: "Portable Persistent Goal Protocol for long-running coding-agent work. Use when starting, resuming, handing off, distilling, or closing a substantial software goal across long sessions, context compaction, agent replacement, or other Agent Skills-compatible coding-agent environments."
 license: MIT
 compatibility: "Requires repository read/write access for persistent state and Git access when Git is used as forensic history. No network service, MCP server, database, or specific model provider is required."
 metadata:

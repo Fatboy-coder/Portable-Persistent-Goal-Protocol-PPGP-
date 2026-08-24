@@ -6,8 +6,8 @@ authors:
   - name: "Fatboy-coder"
 version: "0.1"
 date-released: 2026-08-24
-url: "https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-"
-repository-code: "https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-"
+url: "https://github.com/Fatboy-coder/ppgp"
+repository-code: "https://github.com/Fatboy-coder/ppgp"
 license: MIT
 abstract: >-
   PPGP is a vendor-neutral continuity protocol for long-running coding agents.

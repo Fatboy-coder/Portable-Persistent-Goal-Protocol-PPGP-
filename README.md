@@ -79,7 +79,7 @@ PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill.
 ### Agent Skills CLI
 
 ```bash
-npx skills add https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-/tree/main/skills/ppgp
+npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 ```
 
 ### Manual install
