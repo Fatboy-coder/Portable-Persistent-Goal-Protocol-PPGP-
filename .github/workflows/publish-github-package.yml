@@ -1,0 +1,91 @@
+name: Publish PPGP to GitHub Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version, for example 0.1.0"
+        required: true
+        default: "0.1.0"
+        type: string
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@fatboy-coder"
+          package-manager-cache: false
+
+      - name: Normalize package version
+        id: version
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            VERSION="${RELEASE_TAG#v}"
+          else
+            VERSION="$(printf '%s' "$INPUT_VERSION" | sed -E 's/^[[:space:]]*version:[[:space:]]*//' | tr -d '[:space:]')"
+            VERSION="${VERSION#v}"
+          fi
+
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            VERSION="${VERSION}.0"
+          fi
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid package version: '$VERSION'"
+            exit 1
+          fi
+
+          npm pkg set version="$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Test package
+        run: npm test
+
+      - name: Prepare scoped GitHub package
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARBALL="$(npm pack --silent)"
+          mkdir -p "$RUNNER_TEMP/ppgp-gh"
+          tar -xzf "$TARBALL" -C "$RUNNER_TEMP/ppgp-gh" --strip-components=1
+          cd "$RUNNER_TEMP/ppgp-gh"
+          npm pkg set name="@fatboy-coder/ppgp"
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+          npm pkg set repository.url="git+https://github.com/Fatboy-coder/ppgp.git"
+
+      - name: Publish GitHub Package
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ppgp-gh"
+
+          if npm view "@fatboy-coder/ppgp@$VERSION" version --registry="https://npm.pkg.github.com" >/dev/null 2>&1; then
+            echo "@fatboy-coder/ppgp@$VERSION already exists in GitHub Packages; skipping."
+            exit 0
+          fi
+
+          npm publish --access public --registry="https://npm.pkg.github.com"
