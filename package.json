@@ -1,0 +1,48 @@
+{
+  "name": "ppgp",
+  "version": "0.1.0",
+  "description": "Portable Persistent Goal Protocol CLI and Agent Skill for long-running coding-agent continuity.",
+  "license": "MIT",
+  "author": "Hervey (Fatboy-coder)",
+  "homepage": "https://github.com/Fatboy-coder/ppgp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fatboy-coder/ppgp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Fatboy-coder/ppgp/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "coding-agents",
+    "agent-memory",
+    "agent-continuity",
+    "agent-skills",
+    "agentic-workflows",
+    "llm-agents",
+    "persistent-goals",
+    "software-engineering"
+  ],
+  "bin": {
+    "ppgp": "bin/ppgp.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "SPEC.md",
+    "EVALUATION.md",
+    "CITATION.cff",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/cli.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
