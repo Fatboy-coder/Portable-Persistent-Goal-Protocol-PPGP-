@@ -8,6 +8,8 @@ on:
         required: true
         default: "0.1.0"
         type: string
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -31,16 +33,29 @@ jobs:
         id: version
         shell: bash
         env:
-          RAW_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-          VERSION="$(printf '%s' "$RAW_VERSION" | sed -E 's/^[[:space:]]*version:[[:space:]]*//' | tr -d '[:space:]')"
-          VERSION="${VERSION#v}"
+
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            VERSION="${RELEASE_TAG#v}"
+          else
+            VERSION="$(printf '%s' "$INPUT_VERSION" | sed -E 's/^[[:space:]]*version:[[:space:]]*//' | tr -d '[:space:]')"
+            VERSION="${VERSION#v}"
+          fi
+
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            VERSION="${VERSION}.0"
+          fi
+
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid npm version: '$RAW_VERSION'"
+            echo "Invalid npm version: '$VERSION'"
             echo "Use a SemVer version such as 0.1.0."
             exit 1
           fi
+
           npm pkg set version="$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -66,8 +81,7 @@ jobs:
             export NODE_AUTH_TOKEN="$NPM_TOKEN"
             echo "Publishing with the repository NPM_TOKEN secret."
           else
-            echo "No NPM_TOKEN secret is configured. npm will attempt Trusted Publishing via GitHub OIDC."
-            echo "For the first-ever npm publication, create the package with a token or local npm login first, then configure this workflow as the trusted publisher."
+            echo "No NPM_TOKEN secret is configured. Attempting npm Trusted Publishing through GitHub OIDC."
           fi
 
           npm publish --access public
