@@ -7,6 +7,7 @@ on:
         description: "Release version without the v prefix"
         required: true
         default: "0.1"
+        type: string
 
 permissions:
   contents: write
@@ -17,28 +18,71 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize and validate version
+        id: version
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          VERSION="$(printf '%s' "$RELEASE_VERSION" | tr -d '[:space:]')"
+          VERSION="${VERSION#v}"
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Invalid release version: '$RELEASE_VERSION'"
+            echo "Use a version such as 0.1 or 0.1.0."
+            exit 1
+          fi
+
+          TAG="v${VERSION}"
+          git check-ref-format "refs/tags/${TAG}"
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "archive=ppgp-v${VERSION}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Build installable skill archive
         shell: bash
+        env:
+          ARCHIVE: ${{ steps.version.outputs.archive }}
         run: |
           set -euo pipefail
-          VERSION="${{ inputs.version }}"
-          ARCHIVE="ppgp-v${VERSION}.zip"
           rm -f "$ARCHIVE" "$ARCHIVE.sha256"
           cd skills
           zip -r "../$ARCHIVE" ppgp
           cd ..
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
+      - name: Create release tag
+        shell: bash
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists on origin."
+          else
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          ARCHIVE: ${{ steps.version.outputs.archive }}
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ inputs.version }}"
-          TAG="v${VERSION}"
-          ARCHIVE="ppgp-v${VERSION}.zip"
 
           cat > release-notes.md <<EOF
           # Portable Persistent Goal Protocol ${TAG}
@@ -64,9 +108,13 @@ jobs:
           Use the exact version evaluated. See \`SPEC.md\` and \`CITATION.cff\`.
           EOF
 
-          gh release create "$TAG" \
-            "$ARCHIVE" \
-            "$ARCHIVE.sha256" \
-            --target "${{ github.sha }}" \
-            --title "PPGP ${TAG} (Experimental)" \
-            --notes-file release-notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
+          else
+            gh release create "$TAG" \
+              "$ARCHIVE" \
+              "$ARCHIVE.sha256" \
+              --verify-tag \
+              --title "PPGP ${TAG} (Experimental)" \
+              --notes-file release-notes.md
+          fi
