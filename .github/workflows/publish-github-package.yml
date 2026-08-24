@@ -59,7 +59,7 @@ jobs:
           npm pkg set version="$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Test package
+      - name: Test source package
         run: npm test
 
       - name: Prepare scoped GitHub package
@@ -73,6 +73,13 @@ jobs:
           npm pkg set name="@fatboy-coder/ppgp"
           npm pkg set publishConfig.registry="https://npm.pkg.github.com"
           npm pkg set repository.url="git+https://github.com/Fatboy-coder/ppgp.git"
+
+      - name: Inspect prepared package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ppgp-gh"
+          npm pack --dry-run --ignore-scripts
 
       - name: Publish GitHub Package
         shell: bash
@@ -88,4 +95,6 @@ jobs:
             exit 0
           fi
 
-          npm publish --access public --registry="https://npm.pkg.github.com"
+          # Tests already ran against the source checkout. The prepared package intentionally
+          # excludes test/ from its published payload, so do not rerun lifecycle scripts here.
+          npm publish --ignore-scripts --access public --registry="https://npm.pkg.github.com"
