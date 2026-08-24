@@ -7,16 +7,19 @@
 **License:** MIT  
 **Maturity:** Provisional
 
-PPGP is an open, vendor-neutral workflow for keeping long-running software goals recoverable across context compaction, interrupted sessions, agent replacement and different coding-agent products.
+PPGP is an open, vendor-neutral continuity protocol for long-running AI coding agents and agentic software workflows. It keeps active software goals recoverable across context compaction, interrupted sessions, agent replacement and different coding-agent products.
 
 It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
+
+**[Download PPGP v0.1](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip)** · **[Read the specification](./SPEC.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
 
 ## Start here
 
 | Goal | Resource |
 | --- | --- |
+| Download the installable skill | [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip) |
+| Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
 | Understand the protocol | [`SPEC.md`](./SPEC.md) |
-| Install the Agent Skill | [`skills/ppgp/`](./skills/ppgp/) or [`ppgp-v0.1.zip`](./dist/ppgp-v0.1.zip) |
 | Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
 | Report a recovery failure | [Open an issue](../../issues/new/choose) |
 | Contribute | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
@@ -84,7 +87,9 @@ npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 
 ### Manual install
 
-Download [`ppgp-v0.1.zip`](./dist/ppgp-v0.1.zip), extract it, then copy or upload the `ppgp` skill directory into a client that implements the Agent Skills standard.
+Download the latest release archive from [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip), extract it, then copy or upload the `ppgp` skill directory into a client that implements the Agent Skills standard.
+
+The repository also keeps a source copy under [`skills/ppgp/`](./skills/ppgp/) for inspection and development.
 
 ### Read without installing
 
