@@ -11,6 +11,18 @@ PPGP is an open, vendor-neutral workflow for keeping long-running software goals
 
 It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
 
+## Start here
+
+| Goal | Resource |
+| --- | --- |
+| Understand the protocol | [`SPEC.md`](./SPEC.md) |
+| Install the Agent Skill | [`skills/ppgp/`](./skills/ppgp/) or [`ppgp-v0.1.zip`](./dist/ppgp-v0.1.zip) |
+| Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
+| Report a recovery failure | [Open an issue](../../issues/new/choose) |
+| Contribute | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
+| Cite PPGP | [`CITATION.cff`](./CITATION.cff) |
+| Review release history | [`CHANGELOG.md`](./CHANGELOG.md) |
+
 ## Why
 
 Long-running coding agents commonly lose efficiency when they must repeatedly reconstruct:
@@ -102,6 +114,8 @@ PPGP is experimental.
 Independent evaluation, replication, criticism, alternative implementations and failure reports are welcome.
 
 If you evaluate PPGP in research, production or comparative agent testing, identify the exact PPGP version used and publish enough methodology for the result to be independently interpreted.
+
+The reproducible evaluation guide is in [`EVALUATION.md`](./EVALUATION.md). The repository also provides structured issue forms for recovery failures and evaluation reports.
 
 Especially useful evidence includes:
 
