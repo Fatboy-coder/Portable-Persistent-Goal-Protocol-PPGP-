@@ -1,0 +1,72 @@
+name: Recovery failure
+about: Report a case where a fresh agent could not recover or continue a PPGP goal correctly.
+title: "[Recovery failure] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Failure reports are useful. Please include enough context to interpret the result without exposing confidential material.
+  - type: input
+    id: ppgp-version
+    attributes:
+      label: PPGP version
+      placeholder: "0.1"
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent or coding environment
+      placeholder: "Agent, model/provider, IDE or CLI, version if known"
+    validations:
+      required: true
+  - type: textarea
+    id: repository
+    attributes:
+      label: Repository or task shape
+      description: Describe the project scale and relevant context without sharing proprietary code.
+    validations:
+      required: true
+  - type: textarea
+    id: interruption
+    attributes:
+      label: Continuity interruption
+      description: How did the prior context become unavailable?
+      placeholder: "New session, context compaction, agent replacement, other"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected recovery
+      description: What should the fresh agent have recovered or done?
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: human-reconstruction
+    attributes:
+      label: Did a human have to reconstruct prior context?
+      options:
+        - "Yes"
+        - "No"
+        - "Partially"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add relevant logs, state excerpts, commits or other verification evidence when safe to share.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Include overhead, ambiguity, stale state or any simpler alternative you observed.
