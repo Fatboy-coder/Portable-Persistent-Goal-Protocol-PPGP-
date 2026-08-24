@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use or evaluate PPGP, please cite the exact version used."
+title: "Portable Persistent Goal Protocol (PPGP)"
+type: software
+authors:
+  - name: "Fatboy-coder"
+version: "0.1"
+date-released: 2026-08-24
+url: "https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-"
+repository-code: "https://github.com/Fatboy-coder/Portable-Persistent-Goal-Protocol-PPGP-"
+license: MIT
+abstract: >-
+  PPGP is a vendor-neutral continuity protocol for long-running coding agents.
+  It externalizes the minimum repository-visible state needed to recover active
+  software goals across context loss, interrupted sessions and agent handoffs.
+keywords:
+  - coding agents
+  - agent continuity
+  - persistent goals
+  - software engineering
+  - AI-assisted engineering
