@@ -48,13 +48,40 @@ npx ppgp handoff
 
 The npm package also bundles the Agent Skill. `ppgp install-skill <destination>` copies the bundled skill into an explicit destination without assuming a vendor-specific client path.
 
-### npm publishing security
+### First npm publication
 
-The first npm publication may use a repository `NPM_TOKEN` secret or a local authenticated publish.
+The package must exist on npmjs.com before npm Trusted Publishing can be configured.
 
-After the package exists on npmjs.com, configure `.github/workflows/publish-npm.yml` as the package's npm Trusted Publisher. npm Trusted Publishing uses GitHub OIDC instead of a long-lived registry token and automatically supplies provenance for public packages published from public repositories.
+Bootstrap the first public release from a trusted local machine or with a temporary repository `NPM_TOKEN` secret.
 
-Once Trusted Publishing is verified, remove the repository `NPM_TOKEN` secret.
+Recommended local bootstrap:
+
+```bash
+npm login
+npm whoami
+npm test
+npm pack --dry-run
+npm publish --access public
+```
+
+The authoritative availability check is the publish itself. A package name can be claimed by another publisher at any time before successful publication.
+
+### npm Trusted Publisher
+
+After `ppgp@0.1.0` exists on npmjs.com, configure the package Trusted Publisher with:
+
+```text
+Provider: GitHub Actions
+GitHub user or organization: Fatboy-coder
+Repository: ppgp
+Workflow filename: publish-npm.yml
+Allowed action: npm publish
+Environment: none
+```
+
+The workflow is `.github/workflows/publish-npm.yml` and requests `id-token: write` for OIDC authentication.
+
+After one successful OIDC publication, restrict traditional token publishing in npm package settings and revoke any temporary automation token used for bootstrap.
 
 ## GitHub Packages
 
