@@ -19,7 +19,7 @@ It does not replace model memory, Git, tests, MCP or provider-specific compactio
 | --- | --- |
 | Download the installable skill | [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip) |
 | Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
-| Use the PPGP CLI | `npx ppgp init` after the first npm package publication |
+| Use the PPGP CLI | `npx @fatboy-coder/ppgp init` after the first npm package publication |
 | Understand the protocol | [`SPEC.md`](./SPEC.md) |
 | Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
 | Review distribution channels | [`DISTRIBUTION.md`](./DISTRIBUTION.md) |
@@ -79,7 +79,7 @@ GIT            forensic history and implementation evidence
 
 ## Install
 
-PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and now also includes a dependency-free Node.js CLI package source.
+PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and includes a dependency-free Node.js CLI package source.
 
 ### Agent Skills CLI
 
@@ -89,14 +89,21 @@ npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 
 ### PPGP CLI
 
-The public npm package is prepared as `ppgp` with a `ppgp` executable. Once the first registry publication is complete:
+The canonical public npm package is `@fatboy-coder/ppgp`. Once the first registry publication is complete:
 
 ```bash
-npx ppgp init
-npx ppgp doctor
-npx ppgp goal "Ship the next verified milestone"
-npx ppgp status
-npx ppgp handoff
+npx @fatboy-coder/ppgp init
+npx @fatboy-coder/ppgp doctor
+npx @fatboy-coder/ppgp goal "Ship the next verified milestone"
+npx @fatboy-coder/ppgp status
+npx @fatboy-coder/ppgp handoff
+```
+
+For repeated use, install it globally and keep the short `ppgp` executable:
+
+```bash
+npm install -g @fatboy-coder/ppgp
+ppgp init
 ```
 
 The CLI is deliberately deterministic. It helps inspect, scaffold and recover repository-visible state without pretending to replace agent reasoning, verification, distillation or closure checks.
@@ -140,6 +147,8 @@ Agent Skills     -> agent-native installation
 npmjs.com        -> public CLI discovery and zero-install execution
 GitHub Packages  -> package presence inside the GitHub ecosystem
 ```
+
+The canonical package name on both npmjs.com and GitHub Packages is `@fatboy-coder/ppgp`.
 
 See [`DISTRIBUTION.md`](./DISTRIBUTION.md) for package names, version mapping and publication security.
 
