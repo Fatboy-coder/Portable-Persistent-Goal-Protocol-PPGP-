@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Fatboy-coder/ppgp/blob/main/benchmarks/result.schema.json",
+  "title": "PPGP recovery benchmark run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "experimentId",
+    "pairId",
+    "condition",
+    "repository",
+    "baseCommit",
+    "taskId",
+    "agent",
+    "interruption",
+    "recovery",
+    "verification"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "experimentId": { "type": "string", "minLength": 1 },
+    "pairId": { "type": "string", "minLength": 1 },
+    "condition": { "enum": ["control", "ppgp"] },
+    "ppgpVersion": { "type": ["string", "null"] },
+    "repository": { "type": "string", "minLength": 1 },
+    "baseCommit": { "type": "string", "minLength": 7 },
+    "taskId": { "type": "string", "minLength": 1 },
+    "taskSource": { "type": ["string", "null"] },
+    "conditionOrder": { "enum": ["AB", "BA", "unknown"] },
+    "randomizationSeed": { "type": ["string", "number", "null"] },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product", "model"],
+      "properties": {
+        "product": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "modelVersion": { "type": ["string", "null"] },
+        "clientVersion": { "type": ["string", "null"] }
+      }
+    },
+    "interruption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "repositoryState"],
+      "properties": {
+        "trigger": { "type": "string", "minLength": 1 },
+        "repositoryState": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": ["string", "null"], "format": "date-time" },
+        "activeGoalCheckpointed": { "type": ["boolean", "null"] }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["success", "humanReconstructionMessages", "avoidableDuplicateActions"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "humanReconstructionMessages": { "type": "integer", "minimum": 0 },
+        "humanReconstructionCharacters": { "type": ["integer", "null"], "minimum": 0 },
+        "humanReconstructionTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "latencySeconds": { "type": ["number", "null"], "minimum": 0 },
+        "latencyTurns": { "type": ["integer", "null"], "minimum": 0 },
+        "latencyToolCalls": { "type": ["integer", "null"], "minimum": 0 },
+        "latencyInputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "latencyOutputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "firstGoalAdvancingAction": { "type": ["string", "null"] },
+        "avoidableDuplicateActions": { "type": "integer", "minimum": 0 },
+        "duplicateWorkNotes": { "type": ["string", "null"] }
+      }
+    },
+    "maintenanceOverhead": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "toolCalls": { "type": ["integer", "null"], "minimum": 0 },
+        "seconds": { "type": ["number", "null"], "minimum": 0 },
+        "bytesWritten": { "type": ["integer", "null"], "minimum": 0 },
+        "linesWritten": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "evidence": { "type": ["string", "null"] }
+      }
+    },
+    "rawLog": { "type": ["string", "null"] },
+    "evaluator": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "independent": { "type": "boolean" },
+        "blinded": { "type": ["boolean", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "protocolDeviation": { "type": ["string", "null"] },
+    "excluded": { "type": "boolean", "default": false },
+    "exclusionReason": { "type": ["string", "null"] }
+  }
+}
