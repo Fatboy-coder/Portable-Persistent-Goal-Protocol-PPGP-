@@ -11,15 +11,45 @@ PPGP is an open, vendor-neutral continuity protocol for long-running AI coding a
 
 It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
 
-**[Download PPGP v0.1](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip)** · **[Read the specification](./SPEC.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
+**[Try with npm](https://www.npmjs.com/package/@fatboy-coder/ppgp)** · **[Download PPGP v0.1](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip)** · **[Read the specification](./SPEC.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
+
+## Try PPGP in 30 seconds
+
+Inside any Git repository:
+
+```bash
+npx @fatboy-coder/ppgp init
+npx @fatboy-coder/ppgp goal "Ship one verified milestone"
+npx @fatboy-coder/ppgp status
+```
+
+PPGP keeps the active goal, verified state, frozen decisions, blockers and next executable action recoverable in repository-visible state so a fresh coding agent can resume with less human reconstruction.
+
+For a quick environment check:
+
+```bash
+npx @fatboy-coder/ppgp doctor
+```
+
+## What PPGP keeps recoverable
+
+A coding agent should be able to recover the minimum operational state needed to continue useful work:
+
+- the current goal;
+- frozen decisions;
+- verified state;
+- remaining work;
+- real blockers;
+- durable lessons;
+- the next executable action.
 
 ## Start here
 
 | Goal | Resource |
 | --- | --- |
+| Try the public npm CLI | `npx @fatboy-coder/ppgp init` |
 | Download the installable skill | [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip) |
 | Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
-| Use the PPGP CLI | `npx @fatboy-coder/ppgp init` after the first npm package publication |
 | Understand the protocol | [`SPEC.md`](./SPEC.md) |
 | Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
 | Review distribution channels | [`DISTRIBUTION.md`](./DISTRIBUTION.md) |
@@ -30,15 +60,7 @@ It does not replace model memory, Git, tests, MCP or provider-specific compactio
 
 ## Why
 
-Long-running coding agents commonly lose efficiency when they must repeatedly reconstruct:
-
-- the current goal;
-- frozen decisions;
-- verified state;
-- remaining work;
-- real blockers;
-- durable lessons;
-- the next executable action.
+Long-running coding agents commonly lose efficiency when they must repeatedly reconstruct operational context after context compaction, interrupted sessions, handoffs or agent replacement.
 
 PPGP externalizes only the minimum useful state and treats conversation history as disposable cache.
 
@@ -79,7 +101,7 @@ GIT            forensic history and implementation evidence
 
 ## Install
 
-PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and includes a dependency-free Node.js CLI package source.
+PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and as a dependency-free Node.js CLI published on npm.
 
 ### Agent Skills CLI
 
@@ -89,7 +111,7 @@ npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 
 ### PPGP CLI
 
-The canonical public npm package is `@fatboy-coder/ppgp`. Once the first registry publication is complete:
+The canonical public npm package is `@fatboy-coder/ppgp`:
 
 ```bash
 npx @fatboy-coder/ppgp init
