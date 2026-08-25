@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ppgp",
+  "version": "0.1.0",
+  "description": "Portable continuity protocol for long-running coding agents.",
+  "author": {
+    "name": "Hervey (Fatboy-coder)"
+  },
+  "homepage": "https://github.com/Fatboy-coder/ppgp",
+  "repository": "https://github.com/Fatboy-coder/ppgp",
+  "license": "MIT",
+  "skills": "./skills/"
+}
