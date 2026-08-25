@@ -34,18 +34,22 @@ try {
   const pkg = readJson('package.json');
   const claudePlugin = readJson('.claude-plugin/plugin.json');
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
+  const packagedClaudePlugin = readJson('plugins/ppgp/.claude-plugin/plugin.json');
   const codexPlugin = readJson('.codex-plugin/plugin.json');
   const codexMarketplace = readJson('.agents/plugins/marketplace.json');
   const agentPlugin = readJson('plugin.json');
   const gemini = readJson('gemini-extension.json');
 
-  for (const [name, manifest] of Object.entries({ claudePlugin, codexPlugin, agentPlugin, gemini })) {
+  for (const [name, manifest] of Object.entries({ claudePlugin, packagedClaudePlugin, codexPlugin, agentPlugin, gemini })) {
     assert(manifest.name === 'ppgp', `${name} name mismatch`);
     assert(manifest.version === pkg.version, `${name} version mismatch`);
   }
 
   assert(claudeMarketplace.name === 'ppgp', 'Claude marketplace name mismatch');
   assert(claudeMarketplace.plugins.length === 1 && claudeMarketplace.plugins[0].name === 'ppgp', 'Claude marketplace plugin mismatch');
+  assert(claudeMarketplace.plugins[0].source === './plugins/ppgp', 'Claude marketplace must point to packaged plugin directory');
+  assert(fs.existsSync(path.join(repo, 'plugins', 'ppgp', '.claude-plugin', 'plugin.json')), 'packaged Claude plugin manifest missing');
+
   assert(codexMarketplace.name === 'ppgp', 'Codex marketplace name mismatch');
   assert(codexMarketplace.plugins.length === 1 && codexMarketplace.plugins[0].name === 'ppgp', 'Codex marketplace plugin mismatch');
   assert(codexPlugin.skills === './skills/', 'Codex plugin must use canonical skills directory');
@@ -60,17 +64,22 @@ try {
   assert(fs.existsSync(path.join(repo, 'skills', 'ppgp', 'references', 'PPGP.md')), 'canonical reference missing');
 
   const canonicalSkill = fs.readFileSync(path.join(repo, 'skills', 'ppgp', 'SKILL.md'), 'utf8');
-  const mirrorSkill = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
+  const agentsSkill = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
+  const claudeSkill = fs.readFileSync(path.join(repo, 'plugins', 'ppgp', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
   const canonicalRef = fs.readFileSync(path.join(repo, 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
-  const mirrorRef = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
-  assert(canonicalSkill === mirrorSkill, '.agents skill mirror drifted from canonical SKILL.md');
-  assert(canonicalRef === mirrorRef, '.agents reference mirror drifted from canonical PPGP.md');
+  const agentsRef = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
+  const claudeRef = fs.readFileSync(path.join(repo, 'plugins', 'ppgp', 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
+  assert(canonicalSkill === agentsSkill, '.agents skill mirror drifted from canonical SKILL.md');
+  assert(canonicalRef === agentsRef, '.agents reference mirror drifted from canonical PPGP.md');
+  assert(canonicalSkill === claudeSkill, 'Claude packaged skill mirror drifted from canonical SKILL.md');
+  assert(canonicalRef === claudeRef, 'Claude packaged reference mirror drifted from canonical PPGP.md');
 
   assert(!pkg.files.includes('.agents/'), 'platform adapters must not silently change npm package contents');
   assert(!pkg.files.includes('.claude-plugin/'), 'Claude adapter must not silently change npm package contents');
   assert(!pkg.files.includes('.codex-plugin/'), 'Codex adapter must not silently change npm package contents');
   assert(!pkg.files.includes('plugin.json'), 'Agent Plugin manifest must not silently change npm package contents');
   assert(!pkg.files.includes('gemini-extension.json'), 'Gemini adapter must not silently change npm package contents');
+  assert(!pkg.files.includes('plugins/'), 'Claude packaged plugin must not silently change npm package contents');
 
   console.log('PPGP CLI and distribution tests passed.');
 } finally {
