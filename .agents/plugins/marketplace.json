@@ -1,0 +1,23 @@
+{
+  "name": "ppgp",
+  "interface": {
+    "displayName": "PPGP"
+  },
+  "plugins": [
+    {
+      "name": "ppgp",
+      "source": {
+        "source": "local",
+        "path": "."
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+        "products": [
+          "CODEX"
+        ]
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
