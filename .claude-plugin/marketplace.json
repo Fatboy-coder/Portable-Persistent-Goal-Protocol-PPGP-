@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ppgp",
+  "description": "Portable Persistent Goal Protocol distribution for Claude Code.",
+  "owner": {
+    "name": "Hervey (Fatboy-coder)"
+  },
+  "plugins": [
+    {
+      "name": "ppgp",
+      "description": "Portable continuity protocol for long-running coding agents.",
+      "author": {
+        "name": "Hervey (Fatboy-coder)"
+      },
+      "category": "development",
+      "source": "./",
+      "homepage": "https://github.com/Fatboy-coder/ppgp"
+    }
+  ]
+}
