@@ -4,9 +4,29 @@ This directory contains the machine-readable format for PPGP recovery experiment
 
 - `result.schema.json` defines the run record.
 - `examples/` contains synthetic fixtures used to test the reporting tool. They are **not empirical evidence** for PPGP.
+- `pilot-01/` contains the first prepared empirical pilot fixture and execution runbook. It contains no observed result until real agent sessions are run.
 - Real experiments should keep one JSON record per condition/run and preserve raw logs separately when publication is safe.
 
 Read [`../BENCHMARK_PROTOCOL.md`](../BENCHMARK_PROTOCOL.md) before collecting results.
+
+## First prepared pilot
+
+Pilot 01 uses a deterministic multi-file project-renaming task with an intentional persisted-object aliasing blocker and a standardized pre-green interruption point.
+
+Read:
+
+```text
+pilot-01/TASK.md
+pilot-01/RUNBOOK.md
+```
+
+Materialize byte-equivalent standalone CONTROL and PPGP repositories with:
+
+```bash
+node scripts/prepare-pilot-01.js <output-directory>
+```
+
+The materializer uses a fixed benchmark commit timestamp so both starting repositories receive the same base commit SHA and tree when their contents are identical.
 
 ## Generate a report
 
