@@ -4,6 +4,8 @@ PPGP v0.1 is experimental. Independent tests, failures, replications and compara
 
 The purpose of this guide is to make reports easier to interpret and compare. It is not a benchmark claim.
 
+For controlled A/B recovery experiments, use [`BENCHMARK_PROTOCOL.md`](./BENCHMARK_PROTOCOL.md). Machine-readable run records are defined in [`benchmarks/result.schema.json`](./benchmarks/result.schema.json), with deterministic Markdown aggregation available through `scripts/benchmark-report.js`.
+
 ## Minimum evaluation record
 
 Please record:
@@ -195,6 +197,8 @@ Apply the same interruption point where practical, then compare:
 - final verified outcome;
 - state-maintenance overhead.
 
+For a reproducible paired design, metric definitions, exclusion rules, randomization guidance and reporting format, follow [`BENCHMARK_PROTOCOL.md`](./BENCHMARK_PROTOCOL.md).
+
 Report meaningful differences in setup. Avoid presenting a single repository or model as universal evidence.
 
 ## Reporting results
@@ -202,5 +206,7 @@ Report meaningful differences in setup. Avoid presenting a single repository or 
 For a focused failure or reproducible observation, open an issue using the relevant template.
 
 For a larger study, benchmark, article or external publication, link the public result from an issue so the community can inspect the methodology and discuss it.
+
+When recording structured benchmark data, keep one JSON record per run using [`benchmarks/result.schema.json`](./benchmarks/result.schema.json). The example records under `benchmarks/examples/` are synthetic test fixtures and MUST NOT be presented as empirical evidence.
 
 Negative results are welcome. A simpler approach that preserves recovery quality is a useful contribution.
