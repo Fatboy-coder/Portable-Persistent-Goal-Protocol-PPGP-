@@ -11,7 +11,7 @@ PPGP is an open, vendor-neutral continuity protocol for long-running AI coding a
 
 It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
 
-**[Try with npm](https://www.npmjs.com/package/@fatboy-coder/ppgp)** · **[Download PPGP v0.1](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip)** · **[Read the specification](./SPEC.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
+**[Try with npm](https://www.npmjs.com/package/@fatboy-coder/ppgp)** · **[Download PPGP v0.1](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip)** · **[Read the specification](./SPEC.md)** · **[Platform compatibility](./COMPATIBILITY.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
 
 ## Try PPGP in 30 seconds
 
@@ -50,6 +50,7 @@ A coding agent should be able to recover the minimum operational state needed to
 | Try the public npm CLI | `npx @fatboy-coder/ppgp init` |
 | Download the installable skill | [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip) |
 | Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
+| Install through a native agent platform | [`COMPATIBILITY.md`](./COMPATIBILITY.md) |
 | Understand the protocol | [`SPEC.md`](./SPEC.md) |
 | Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
 | Review distribution channels | [`DISTRIBUTION.md`](./DISTRIBUTION.md) |
@@ -101,13 +102,31 @@ GIT            forensic history and implementation evidence
 
 ## Install
 
-PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill and as a dependency-free Node.js CLI published on npm.
+PPGP v0.1 ships as an [Agent Skills](https://agentskills.io/) compatible skill, as a dependency-free Node.js CLI published on npm, and through thin native distribution adapters for major coding-agent ecosystems.
 
-### Agent Skills CLI
+### Universal Agent Skills route
 
 ```bash
 npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 ```
+
+`skills/ppgp/` is the canonical PPGP Agent Skill source.
+
+### Native platform routes
+
+| Platform | Route |
+| --- | --- |
+| Claude Code | Plugins → Add marketplace → `Fatboy-coder/ppgp` → install `ppgp` |
+| OpenAI Codex | `.codex-plugin/plugin.json` + repo marketplace metadata |
+| ChatGPT | Agent Skill / skill-only OpenAI plugin; public directory listing requires external publication |
+| Gemini CLI | `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
+| Cursor | root Agent Plugin `plugin.json` + canonical `skills/` |
+| GitHub Copilot | repository-native `.agents/skills/ppgp/` discovery |
+| Windsurf | repository-native `.agents/skills/ppgp/` discovery |
+| Devin | repository-native `.agents/skills/ppgp/` discovery |
+| Kiro / Cline / Junie | import the canonical public Agent Skill |
+
+See [`COMPATIBILITY.md`](./COMPATIBILITY.md) for verification level, limitations and remaining marketplace actions. Repository readiness is not presented as vendor approval or public listing.
 
 ### PPGP CLI
 
@@ -134,7 +153,9 @@ The CLI is deliberately deterministic. It helps inspect, scaffold and recover re
 
 Download the latest release archive from [`ppgp-v0.1.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.zip), extract it, then copy or upload the `ppgp` skill directory into a client that implements the Agent Skills standard.
 
-The repository also keeps a source copy under [`skills/ppgp/`](./skills/ppgp/) for inspection and development.
+The repository also keeps the canonical source under [`skills/ppgp/`](./skills/ppgp/) for inspection and development.
+
+For clients that natively discover `.agents/skills/`, PPGP commits a generated compatibility mirror at `.agents/skills/ppgp/`. Automated tests enforce byte-for-byte parity with the canonical skill.
 
 ### Read without installing
 
@@ -164,15 +185,22 @@ These are protocol operations, not assumptions about a vendor-specific slash-com
 PPGP uses multiple distribution surfaces on purpose:
 
 ```text
-GitHub Release   -> direct download
-Agent Skills     -> agent-native installation
-npmjs.com        -> public CLI discovery and zero-install execution
-GitHub Packages  -> package presence inside the GitHub ecosystem
+Canonical Agent Skill      -> vendor-neutral source of truth
+Claude Plugin/Marketplace  -> native Claude discovery
+OpenAI Plugin              -> Codex / OpenAI plugin packaging
+Gemini Extension           -> Gemini CLI installation
+Agent Plugin               -> Cursor and compatible clients
+.agents/skills mirror      -> Copilot / Windsurf / Devin discovery
+GitHub Release             -> direct download
+npmjs.com                  -> public CLI discovery and zero-install execution
+GitHub Packages            -> package presence inside GitHub
 ```
 
-The canonical package name on both npmjs.com and GitHub Packages is `@fatboy-coder/ppgp`.
+The canonical npm package name is `@fatboy-coder/ppgp`.
 
-See [`DISTRIBUTION.md`](./DISTRIBUTION.md) for package names, version mapping and publication security.
+Adding platform adapters does not change PPGP protocol semantics and does not by itself create a new protocol release.
+
+See [`DISTRIBUTION.md`](./DISTRIBUTION.md) for package names, manifests, version mapping and publication security.
 
 ## Research and evaluation
 
