@@ -40,9 +40,14 @@ try {
   const agentPlugin = readJson('plugin.json');
   const gemini = readJson('gemini-extension.json');
 
-  for (const [name, manifest] of Object.entries({ claudePlugin, packagedClaudePlugin, codexPlugin, agentPlugin, gemini })) {
+  for (const [name, manifest] of Object.entries({ codexPlugin, agentPlugin, gemini })) {
     assert(manifest.name === 'ppgp', `${name} name mismatch`);
     assert(manifest.version === pkg.version, `${name} version mismatch`);
+  }
+
+  for (const [name, manifest] of Object.entries({ claudePlugin, packagedClaudePlugin })) {
+    assert(manifest.name === 'ppgp', `${name} name mismatch`);
+    assert(!Object.prototype.hasOwnProperty.call(manifest, 'version'), `${name} should not pin a static version; Claude marketplace refresh follows repository revisions`);
   }
 
   assert(claudeMarketplace.name === 'ppgp', 'Claude marketplace name mismatch');
