@@ -64,6 +64,14 @@ VERIFICATION_EVIDENCE
 NEXT_EXECUTABLE_ACTION
 ```
 
+ACTIVE_GOAL is the primary repository-visible hot state for recovery of unfinished work.
+
+A fresh agent SHOULD be able to recover an active goal from current ACTIVE_GOAL plus selectively relevant durable state and evidence without requiring a prior `distill` operation.
+
+Implementations SHOULD update ACTIVE_GOAL after material state changes often enough that abrupt interruption does not force substantial human reconstruction or unnecessary repetition of verified work.
+
+PPGP does not require persistence after every trivial action. Checkpoint frequency is implementation-dependent and SHOULD balance recovery fidelity against state-maintenance overhead.
+
 ACTIVE_GOAL MUST NOT become the permanent chronological history.
 
 ACTIVE_GOAL MUST be removed after successful closure and distillation.
@@ -116,6 +124,10 @@ Move durable information into ROADMAP, MEMORY or CONSTITUTION as appropriate.
 
 Discard temporary chronology and redundant execution detail.
 
+DISTILL is a consolidation and garbage-collection phase. It is not the primary survival mechanism for an unfinished goal.
+
+If a session is interrupted before DISTILL, current ACTIVE_GOAL state SHOULD still be sufficient to recover the active goal when combined with relevant repository evidence.
+
 ### CLOSED
 
 A goal is CLOSED only after synchronous Definition-of-Done requirements are verified and temporary working memory has been garbage-collected.
@@ -144,6 +156,8 @@ Check observable evidence rather than relying on model confidence.
 
 Record only material state changes needed for continuation.
 
+A DELTA SHOULD update repository-visible hot state when the change would materially affect recovery after interruption.
+
 The loop repeats until the current phase exit condition is met.
 
 ## 6. Boot and recovery
@@ -170,6 +184,8 @@ A recovery sequence SHOULD inspect, as relevant:
 7. NEXT_EXECUTABLE_ACTION.
 
 If ACTIVE_GOAL says the strategy is frozen, recovery SHOULD resume execution rather than restart THINK by default.
+
+Abrupt interruption before DISTILL MUST NOT by itself be treated as loss of the active goal if current repository-visible hot state exists.
 
 ## 7. Evidence precedence
 
@@ -288,6 +304,8 @@ temporary execution detail    -> discard
 
 Git remains the detailed forensic archive.
 
+Failure to distill MAY increase long-term state noise or rediscovery cost, but it SHOULD NOT make a still-active, correctly checkpointed goal unrecoverable.
+
 After successful distillation, ACTIVE_GOAL MUST be deleted.
 
 ## 13. Suggested operational metrics
@@ -331,14 +349,17 @@ Implementations SHOULD reuse equivalent existing documents instead of creating d
 A useful PPGP recovery test is:
 
 1. Agent A begins a substantial goal.
-2. Context is compacted, lost or deliberately removed.
-3. Agent B starts without the prior conversation.
-4. Agent B reads repository-visible PPGP state.
-5. Agent B correctly identifies the goal, phase, frozen decisions, verified state, remaining work, blockers and next executable action.
-6. Agent B continues without asking the human to reconstruct prior history.
-7. The goal is verified, distilled and closed.
+2. Agent A records current ACTIVE_GOAL state after at least one material verified change.
+3. Context is compacted, lost or deliberately removed before DISTILL.
+4. Agent B starts without the prior conversation.
+5. Agent B reads repository-visible PPGP state.
+6. Agent B correctly identifies the goal, phase, frozen decisions, verified state, remaining work, blockers and next executable action.
+7. Agent B continues without asking the human to reconstruct prior history.
+8. The goal is eventually verified, distilled and closed.
 
 A system that cannot pass this recovery test SHOULD NOT claim robust PPGP continuity.
+
+Passing one recovery test demonstrates recovery under that tested condition only. It does not establish universal effectiveness or superiority.
 
 ## 17. Versioning
 
