@@ -16,6 +16,5 @@
     "agent-skills",
     "persistent-goals",
     "software-engineering"
-  ],
-  "skills": "./skills/"
+  ]
 }
