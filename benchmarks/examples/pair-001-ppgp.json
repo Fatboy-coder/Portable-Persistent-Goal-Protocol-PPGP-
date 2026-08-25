@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "0.1",
+  "experimentId": "example-pilot",
+  "pairId": "pair-001",
+  "condition": "ppgp",
+  "ppgpVersion": "0.1",
+  "repository": "example/repository",
+  "baseCommit": "0123456789abcdef",
+  "taskId": "example-multifile-refactor",
+  "taskSource": "Example fixture only; not empirical PPGP evidence.",
+  "conditionOrder": "AB",
+  "randomizationSeed": "example-seed",
+  "agent": {
+    "product": "example-client",
+    "model": "example-model",
+    "modelVersion": null,
+    "clientVersion": null
+  },
+  "interruption": {
+    "trigger": "strategy chosen, blocker discovered, work unfinished",
+    "repositoryState": "example-ppgp-interruption",
+    "timestamp": null,
+    "activeGoalCheckpointed": true
+  },
+  "recovery": {
+    "success": true,
+    "humanReconstructionMessages": 0,
+    "humanReconstructionCharacters": 0,
+    "humanReconstructionTokens": null,
+    "latencySeconds": 45,
+    "latencyTurns": 1,
+    "latencyToolCalls": 3,
+    "latencyInputTokens": null,
+    "latencyOutputTokens": null,
+    "firstGoalAdvancingAction": "continue implementation from ACTIVE_GOAL next action",
+    "avoidableDuplicateActions": 0,
+    "duplicateWorkNotes": "Synthetic example only."
+  },
+  "maintenanceOverhead": {
+    "tokens": null,
+    "toolCalls": 2,
+    "seconds": 20,
+    "bytesWritten": 1400,
+    "linesWritten": 38
+  },
+  "verification": {
+    "passed": true,
+    "evidence": "Synthetic example verification."
+  },
+  "rawLog": null,
+  "evaluator": {
+    "independent": false,
+    "blinded": false,
+    "notes": "Synthetic example only."
+  },
+  "protocolDeviation": null,
+  "excluded": false,
+  "exclusionReason": null
+}
