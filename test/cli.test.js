@@ -49,8 +49,15 @@ try {
   assert(codexMarketplace.name === 'ppgp', 'Codex marketplace name mismatch');
   assert(codexMarketplace.plugins.length === 1 && codexMarketplace.plugins[0].name === 'ppgp', 'Codex marketplace plugin mismatch');
   assert(codexPlugin.skills === './skills/', 'Codex plugin must use canonical skills directory');
-  assert(agentPlugin.skills === './skills/', 'Agent Plugin must use canonical skills directory');
+
+  assert(agentPlugin.$schema === 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json', 'Agent Plugin schema mismatch');
+  const allowedAgentPluginKeys = new Set(['$schema', 'name', 'version', 'description', 'author', 'homepage', 'repository', 'license', 'keywords', 'extensions']);
+  for (const key of Object.keys(agentPlugin)) {
+    assert(allowedAgentPluginKeys.has(key), `Agent Plugin contains unsupported top-level field: ${key}`);
+  }
+
   assert(fs.existsSync(path.join(repo, 'skills', 'ppgp', 'SKILL.md')), 'canonical skill missing');
+  assert(fs.existsSync(path.join(repo, 'skills', 'ppgp', 'references', 'PPGP.md')), 'canonical reference missing');
 
   const canonicalSkill = fs.readFileSync(path.join(repo, 'skills', 'ppgp', 'SKILL.md'), 'utf8');
   const mirrorSkill = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
@@ -62,6 +69,8 @@ try {
   assert(!pkg.files.includes('.agents/'), 'platform adapters must not silently change npm package contents');
   assert(!pkg.files.includes('.claude-plugin/'), 'Claude adapter must not silently change npm package contents');
   assert(!pkg.files.includes('.codex-plugin/'), 'Codex adapter must not silently change npm package contents');
+  assert(!pkg.files.includes('plugin.json'), 'Agent Plugin manifest must not silently change npm package contents');
+  assert(!pkg.files.includes('gemini-extension.json'), 'Gemini adapter must not silently change npm package contents');
 
   console.log('PPGP CLI and distribution tests passed.');
 } finally {
