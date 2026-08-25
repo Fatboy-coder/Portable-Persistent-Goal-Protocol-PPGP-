@@ -9,5 +9,11 @@
   "homepage": "https://github.com/Fatboy-coder/ppgp",
   "repository": "https://github.com/Fatboy-coder/ppgp",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "coding-agents",
+    "agent-memory",
+    "agent-continuity",
+    "agent-skills",
+    "persistent-goals"
+  ]
 }
