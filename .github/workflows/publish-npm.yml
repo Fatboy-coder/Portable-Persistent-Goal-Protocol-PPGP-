@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+          scope: "@fatboy-coder"
           package-manager-cache: false
 
       - name: Normalize package version
@@ -72,8 +73,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          if npm view "ppgp@$VERSION" version >/dev/null 2>&1; then
-            echo "ppgp@$VERSION already exists on npmjs.com; skipping."
+          PACKAGE="@fatboy-coder/ppgp"
+
+          if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+            echo "$PACKAGE@$VERSION already exists on npmjs.com; skipping."
             exit 0
           fi
 
