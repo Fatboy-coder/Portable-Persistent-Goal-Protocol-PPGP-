@@ -1,0 +1,20 @@
+{
+  "name": "ppgp",
+  "version": "0.1.0",
+  "description": "Portable continuity protocol for long-running coding agents.",
+  "author": {
+    "name": "Hervey (Fatboy-coder)",
+    "url": "https://github.com/Fatboy-coder"
+  },
+  "homepage": "https://github.com/Fatboy-coder/ppgp",
+  "repository": "https://github.com/Fatboy-coder/ppgp",
+  "license": "MIT",
+  "keywords": [
+    "coding-agents",
+    "agent-memory",
+    "agent-continuity",
+    "agent-skills",
+    "persistent-goals",
+    "software-engineering"
+  ]
+}
