@@ -13,7 +13,7 @@
         "name": "Hervey (Fatboy-coder)"
       },
       "category": "development",
-      "source": "./",
+      "source": "./plugins/ppgp",
       "homepage": "https://github.com/Fatboy-coder/ppgp"
     }
   ]
