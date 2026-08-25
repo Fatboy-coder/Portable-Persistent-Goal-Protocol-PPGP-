@@ -4,6 +4,7 @@ PPGP keeps one canonical protocol skill at `skills/ppgp/` and adds only thin dis
 
 Status vocabulary:
 
+- **VERIFIED CLIENT**: install/discovery/invocation has been manually verified in the real client.
 - **VERIFIED FORMAT**: repository artifact matches the platform's documented format and is covered by PPGP validation.
 - **REPOSITORY NATIVE**: the platform can discover the committed repository skill through a documented standard path.
 - **IMPORT READY**: the platform can import or install the canonical public skill/repository, but a client-side smoke test is still required.
@@ -13,7 +14,7 @@ Status vocabulary:
 
 | Platform | Native mechanism | PPGP artifact | Status | Remaining external action |
 | --- | --- | --- | --- | --- |
-| Anthropic Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `skills/ppgp/` | STRUCTURALLY READY | Add marketplace `Fatboy-coder/ppgp` in Claude and install `ppgp` |
+| Anthropic Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/marketplace.json`, `plugins/ppgp/` | VERIFIED CLIENT | None for personal marketplace install; public Anthropic listing is not claimed |
 | OpenAI Codex | Plugin + repo marketplace | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `skills/ppgp/` | STRUCTURALLY READY | Import/test in Codex; public Plugin Directory listing is external |
 | OpenAI ChatGPT | Agent Skills / skill-only plugins | `skills/ppgp/` and Codex/OpenAI plugin package | IMPORT READY | Upload/import the skill or submit the plugin for public directory availability |
 | Google Gemini CLI | Gemini Extension + Agent Skills | `gemini-extension.json`, `skills/ppgp/` | STRUCTURALLY READY | Run `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
@@ -45,6 +46,8 @@ For clients that natively discover the cross-agent `.agents/skills/` convention,
 
 The `.agents/skills/ppgp/` tree is a generated compatibility mirror, not an independent implementation. `npm test` fails if either mirrored file drifts from the canonical source.
 
+Claude's marketplace adapter is packaged under `plugins/ppgp/` because Claude copies installed plugins into its cache. The packaged skill is also a deterministic mirror of the canonical skill and is drift-tested.
+
 ## Adapter principles
 
 1. Protocol semantics remain vendor-neutral.
@@ -53,6 +56,7 @@ The `.agents/skills/ppgp/` tree is a generated compatibility mirror, not an inde
 4. When a second path is required for discovery, keep it deterministic and drift-tested.
 5. Marketplace readiness, submission, approval, and public listing are distinct states.
 6. Do not claim a client is verified merely because a manifest exists.
+7. For repository-backed Claude marketplace installs, plugin refresh should follow repository revisions rather than a stale fixed adapter version.
 
 ## Public marketplace state
 
@@ -60,7 +64,7 @@ Repository-side packaging does not imply vendor endorsement or public listing.
 
 Current state after this iteration:
 
-- Claude self-hosted marketplace: structurally ready, manual UI test required.
+- Claude self-hosted marketplace: installation and `/ppgp` discovery manually verified in Claude; public Anthropic listing not claimed.
 - OpenAI/Codex plugin package: structurally ready, public Plugin Directory submission not claimed.
 - Cursor Agent Plugin: structurally ready, Cursor Marketplace submission not claimed.
 - Gemini extension: structurally ready, manual CLI install test required.
