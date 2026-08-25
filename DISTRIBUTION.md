@@ -24,11 +24,13 @@ npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 
 Purpose: public CLI discovery and zero-install execution.
 
-Package name:
+Canonical public package name:
 
 ```text
-ppgp
+@fatboy-coder/ppgp
 ```
+
+The original unscoped name `ppgp` is intentionally not used because npm's similarity protection rejects it as too close to existing high-traffic package names. The scoped package keeps the PPGP identity while avoiding namespace ambiguity.
 
 CLI binary:
 
@@ -36,39 +38,42 @@ CLI binary:
 ppgp
 ```
 
-Examples after publication:
+Zero-install examples:
 
 ```bash
-npx ppgp init
-npx ppgp doctor
-npx ppgp goal "Ship the next verified milestone"
-npx ppgp status
-npx ppgp handoff
+npx @fatboy-coder/ppgp init
+npx @fatboy-coder/ppgp doctor
+npx @fatboy-coder/ppgp goal "Ship the next verified milestone"
+npx @fatboy-coder/ppgp status
+npx @fatboy-coder/ppgp handoff
+```
+
+Global installation keeps the shorter executable:
+
+```bash
+npm install -g @fatboy-coder/ppgp
+ppgp init
 ```
 
 The npm package also bundles the Agent Skill. `ppgp install-skill <destination>` copies the bundled skill into an explicit destination without assuming a vendor-specific client path.
 
 ### First npm publication
 
-The package must exist on npmjs.com before npm Trusted Publishing can be configured.
+Create the npm organization `fatboy-coder` first. The organization name becomes the npm scope `@fatboy-coder`.
 
-Bootstrap the first public release from a trusted local machine or with a temporary repository `NPM_TOKEN` secret.
-
-Recommended local bootstrap:
+Use npm's free public-package organization plan. Then publish the first package from an authenticated trusted local machine:
 
 ```bash
-npm login
+npm login --auth-type=web
 npm whoami
 npm test
 npm pack --dry-run
 npm publish --access public
 ```
 
-The authoritative availability check is the publish itself. A package name can be claimed by another publisher at any time before successful publication.
-
 ### npm Trusted Publisher
 
-After `ppgp@0.1.0` exists on npmjs.com, configure the package Trusted Publisher with:
+After `@fatboy-coder/ppgp@0.1.0` exists on npmjs.com, configure the package Trusted Publisher with:
 
 ```text
 Provider: GitHub Actions
@@ -93,7 +98,7 @@ Published package name:
 @fatboy-coder/ppgp
 ```
 
-The GitHub package is produced from the same npm package contents. The workflow changes only the package scope and registry in an isolated temporary directory before publication.
+The GitHub package is produced from the same npm package contents and published to GitHub's npm registry.
 
 GitHub Packages is a secondary distribution surface. The public GitHub Release and npmjs.com package remain the lower-friction entry points for users.
 
@@ -105,8 +110,8 @@ npm-compatible package releases use semantic package version `0.1.0`.
 
 ```text
 PPGP protocol 0.1
-npm package 0.1.0
-GitHub package 0.1.0
+npm package @fatboy-coder/ppgp@0.1.0
+GitHub package @fatboy-coder/ppgp@0.1.0
 GitHub release v0.1
 ```
 
