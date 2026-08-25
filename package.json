@@ -39,7 +39,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/cli.test.js",
+    "test": "node test/cli.test.js && node test/benchmark.test.js",
+    "benchmark:report": "node scripts/benchmark-report.js",
     "prepublishOnly": "npm test"
   },
   "publishConfig": {
