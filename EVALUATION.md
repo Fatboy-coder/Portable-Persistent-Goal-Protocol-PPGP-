@@ -1,6 +1,6 @@
 # Evaluating PPGP
 
-PPGP v0.1 is experimental. Independent tests, failures, replications and comparative evaluations are welcome.
+PPGP v0.1.2 is experimental. Independent tests, failures, replications and comparative evaluations are welcome.
 
 The purpose of this guide is to make reports easier to interpret and compare. It is not a benchmark claim.
 
