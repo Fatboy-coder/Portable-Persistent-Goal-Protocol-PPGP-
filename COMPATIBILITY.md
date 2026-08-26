@@ -14,7 +14,7 @@ Status vocabulary:
 
 | Platform | Native mechanism | PPGP artifact | Status | Remaining external action |
 | --- | --- | --- | --- | --- |
-| Anthropic Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/marketplace.json`, `plugins/ppgp/` | VERIFIED CLIENT | After install/update run `/reload-plugins`; marketplace plugin skill invocation is `/ppgp:ppgp` |
+| Anthropic Claude / Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/marketplace.json`, `plugins/ppgp/` | VERIFIED CLIENT | Tested Claude client invokes `/ppgp`; Claude Code may expose `/ppgp:ppgp`; use `/reload-plugins` only where that command exists and activation requires it |
 | OpenAI Codex | Plugin + repo marketplace | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `skills/ppgp/` | STRUCTURALLY READY | Import/test in Codex; public Plugin Directory listing is external |
 | OpenAI ChatGPT | Agent Skills / skill-only plugins | `skills/ppgp/` and Codex/OpenAI plugin package | IMPORT READY | Upload/import the skill or submit the plugin for public directory availability |
 | Google Gemini CLI | Gemini Extension + Agent Skills | `gemini-extension.json`, `skills/ppgp/` | STRUCTURALLY READY | Run `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
@@ -48,13 +48,21 @@ The `.agents/skills/ppgp/` tree is a generated compatibility mirror, not an inde
 
 Claude's marketplace adapter is packaged under `plugins/ppgp/` because Claude copies installed plugins into its cache. The packaged skill is also a deterministic mirror of the canonical skill and is drift-tested.
 
-Claude Code namespaces plugin skills as `/plugin-name:skill-name`. Because both the PPGP plugin and its skill are named `ppgp`, the marketplace invocation is therefore:
+Claude invocation is client-surface dependent. In the tested Claude client, the self-hosted marketplace installation exposes and successfully invokes:
+
+```text
+/ppgp
+```
+
+The same tested environment reports `/reload-plugins` as unavailable, so that command must not be presented as universally required.
+
+Claude Code can namespace plugin skills as `/plugin-name:skill-name`. Where that namespace is exposed, the PPGP plugin and skill names produce:
 
 ```text
 /ppgp:ppgp
 ```
 
-An unnamespaced `/ppgp` is a standalone-skill route, not the marketplace-plugin route. Claude Code documents personal standalone skills under `~/.claude/skills/<skill-name>/SKILL.md` and project skills under `.claude/skills/<skill-name>/SKILL.md`.
+Do not project one invocation form across every Claude product surface. Client behavior should be recorded from direct smoke tests and documentation for the specific surface being used.
 
 ## Adapter principles
 
@@ -65,7 +73,7 @@ An unnamespaced `/ppgp` is a standalone-skill route, not the marketplace-plugin 
 5. Marketplace readiness, submission, approval, and public listing are distinct states.
 6. Do not claim a client is verified merely because a manifest exists.
 7. For repository-backed Claude marketplace installs, plugin refresh should follow repository revisions rather than a stale fixed adapter version.
-8. Document platform-native invocation names exactly rather than projecting the canonical skill name onto vendor namespace rules.
+8. Document platform-native invocation names from the exact tested client surface rather than assuming one slash-command form is universal.
 
 ## Public marketplace state
 
@@ -73,7 +81,7 @@ Repository-side packaging does not imply vendor endorsement or public listing.
 
 Current state after this iteration:
 
-- Claude self-hosted marketplace: installation and namespaced `/ppgp:ppgp` invocation are supported by the packaged plugin layout; after an install/update, use `/reload-plugins` when Claude requests activation. Public Anthropic listing is not claimed.
+- Claude self-hosted marketplace: installation, updated-skill loading and unnamespaced `/ppgp` invocation have been manually verified in a real Claude client. That client does not expose `/reload-plugins`. Claude Code may expose the namespaced `/ppgp:ppgp` form. Public Anthropic listing is not claimed.
 - OpenAI/Codex plugin package: structurally ready, public Plugin Directory submission not claimed.
 - Cursor Agent Plugin: structurally ready, Cursor Marketplace submission not claimed.
 - Gemini extension: structurally ready, manual CLI install test required.
