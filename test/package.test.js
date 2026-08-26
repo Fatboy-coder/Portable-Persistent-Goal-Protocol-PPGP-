@@ -1,0 +1,45 @@
+'use strict';
+
+const { spawnSync } = require('child_process');
+const path = require('path');
+
+const repo = path.resolve(__dirname, '..');
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+  cwd: repo,
+  encoding: 'utf8',
+});
+
+assert(packed.status === 0, `npm pack --dry-run failed:\n${packed.stdout}\n${packed.stderr}`);
+
+let manifest;
+try {
+  const parsed = JSON.parse(packed.stdout);
+  manifest = parsed[0];
+} catch (error) {
+  throw new Error(`Could not parse npm pack JSON output: ${error.message}\n${packed.stdout}`);
+}
+
+const files = new Set((manifest.files || []).map((entry) => entry.path));
+
+for (const required of [
+  'bin/ppgp.js',
+  'skills/ppgp/SKILL.md',
+  'scripts/benchmark-report.js',
+  'scripts/prepare-pilot-01.js',
+  'benchmarks/result.schema.json',
+  'benchmarks/pilot-01/RUNBOOK.md',
+  'benchmarks/pilot-01/TASK.md',
+  'BENCHMARK_PROTOCOL.md',
+  'SPEC.md',
+  'EVALUATION.md',
+  'CITATION.cff',
+]) {
+  assert(files.has(required), `published npm package is missing ${required}`);
+}
+
+console.log('PPGP npm package contents verified.');
