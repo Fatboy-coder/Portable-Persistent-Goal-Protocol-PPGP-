@@ -5,6 +5,7 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 
 const repo = path.resolve(__dirname, '..');
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -13,7 +14,7 @@ function assert(condition, message) {
 const pkg = JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8'));
 assert(pkg.bin && pkg.bin.ppgp === 'bin/ppgp.js', 'package.json must publish the ppgp CLI binary at bin/ppgp.js');
 
-const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+const packed = spawnSync(npmCommand, ['pack', '--dry-run', '--json', '--ignore-scripts'], {
   cwd: repo,
   encoding: 'utf8',
 });
