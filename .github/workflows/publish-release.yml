@@ -45,6 +45,13 @@ jobs:
             exit 1
           fi
 
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "Release input $VERSION does not match committed package.json version $PACKAGE_VERSION."
+            echo "Commit the release version before publishing."
+            exit 1
+          fi
+
           TAG="v${VERSION}"
           git check-ref-format "refs/tags/${TAG}"
 
@@ -63,12 +70,8 @@ jobs:
           echo "archive=ppgp-v${VERSION}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Validate source and npm payload
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          npm pkg set version="$VERSION"
           npm test
           npm pack --dry-run --ignore-scripts
 
