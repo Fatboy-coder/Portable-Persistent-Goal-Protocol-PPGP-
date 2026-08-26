@@ -1,6 +1,6 @@
 {
   "name": "ppgp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Portable continuity protocol for long-running coding agents.",
   "author": {
     "name": "Hervey (Fatboy-coder)",
