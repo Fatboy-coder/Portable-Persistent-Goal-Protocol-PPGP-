@@ -1,8 +1,15 @@
 name: Publish PPGP to npm
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Existing GitHub Release version, for example 0.1.1"
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["Publish PPGP release"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -10,12 +17,47 @@ permissions:
 
 jobs:
   publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Resolve release source
+        id: source
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          UPSTREAM_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            VERSION="$(printf '%s' "$INPUT_VERSION" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^[Vv]//; s/[[:space:]]+//g')"
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid release version: '$INPUT_VERSION'"
+              exit 1
+            fi
+            REF="v${VERSION}"
+          else
+            if [[ -z "${UPSTREAM_SHA:-}" ]]; then
+              echo "Missing upstream release workflow SHA."
+              exit 1
+            fi
+            REF="$UPSTREAM_SHA"
+            VERSION=""
+          fi
+
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "requested_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check out release source
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ steps.source.outputs.ref }}
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -25,23 +67,30 @@ jobs:
           scope: "@fatboy-coder"
           package-manager-cache: false
 
-      - name: Validate release version
+      - name: Validate published release version
         id: version
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_VERSION: ${{ steps.source.outputs.requested_version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION="${RELEASE_TAG#v}"
 
+          VERSION="$(node -p "require('./package.json').version")"
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid release version: '$VERSION'"
+            echo "Invalid package version: '$VERSION'"
             exit 1
           fi
 
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
-            echo "Release tag version $VERSION does not match package.json version $PACKAGE_VERSION."
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REQUESTED_VERSION" != "$VERSION" ]]; then
+            echo "Requested version $REQUESTED_VERSION does not match package.json version $VERSION."
+            exit 1
+          fi
+
+          TAG="v${VERSION}"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "GitHub Release $TAG does not exist. Refusing to publish npm before the canonical release."
             exit 1
           fi
 
