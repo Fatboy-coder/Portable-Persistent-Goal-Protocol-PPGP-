@@ -23,7 +23,8 @@ function assert(condition, message) {
 }
 
 try {
-  assert(run(['--version']).includes('0.1.0'), 'version output mismatch');
+  const pkg = readJson('package.json');
+  assert(run(['--version']).trim() === pkg.version, `version output mismatch: expected ${pkg.version}`);
   run(['init', '--root', root]);
   run(['goal', 'Ship', 'the', 'test', '--root', root]);
   const activeGoal = path.join(root, 'docs', 'ACTIVE_GOAL.md');
@@ -31,7 +32,6 @@ try {
   assert(run(['status', '--root', root]).includes('goal: Ship the test'), 'status did not recover goal');
   assert(run(['handoff', '--root', root]).includes('PPGP/0.1'), 'handoff header missing');
 
-  const pkg = readJson('package.json');
   const claudePlugin = readJson('.claude-plugin/plugin.json');
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
   const packagedClaudePlugin = readJson('plugins/ppgp/.claude-plugin/plugin.json');
