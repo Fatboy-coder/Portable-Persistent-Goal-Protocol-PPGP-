@@ -1,13 +1,6 @@
 name: Publish PPGP to npm
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "npm package version, for example 0.1.0"
-        required: true
-        default: "0.1.0"
-        type: string
   release:
     types: [published]
 
@@ -21,6 +14,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -30,40 +25,32 @@ jobs:
           scope: "@fatboy-coder"
           package-manager-cache: false
 
-      - name: Normalize package version
+      - name: Validate release version
         id: version
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_VERSION: ${{ inputs.version }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
 
-          if [[ "$EVENT_NAME" == "release" ]]; then
-            VERSION="${RELEASE_TAG#v}"
-          else
-            VERSION="$(printf '%s' "$INPUT_VERSION" | sed -E 's/^[[:space:]]*version:[[:space:]]*//' | tr -d '[:space:]')"
-            VERSION="${VERSION#v}"
-          fi
-
-          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            VERSION="${VERSION}.0"
-          fi
-
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid npm version: '$VERSION'"
-            echo "Use a SemVer version such as 0.1.0."
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release version: '$VERSION'"
             exit 1
           fi
 
-          npm pkg set version="$VERSION"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "Release tag version $VERSION does not match package.json version $PACKAGE_VERSION."
+            exit 1
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Test and inspect package
         run: |
           npm test
-          npm pack --dry-run
+          npm pack --dry-run --ignore-scripts
 
       - name: Publish public npm package
         shell: bash

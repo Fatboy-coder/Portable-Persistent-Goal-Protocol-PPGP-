@@ -45,6 +45,13 @@ jobs:
             exit 1
           fi
 
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "Release input $VERSION does not match committed package.json version $PACKAGE_VERSION."
+            echo "Commit the release version before publishing."
+            exit 1
+          fi
+
           TAG="v${VERSION}"
           git check-ref-format "refs/tags/${TAG}"
 
@@ -61,28 +68,28 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "archive=ppgp-v${VERSION}.zip" >> "$GITHUB_OUTPUT"
+          echo "protocol_archive=ppgp-v0.1.zip" >> "$GITHUB_OUTPUT"
 
       - name: Validate source and npm payload
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          npm pkg set version="$VERSION"
           npm test
           npm pack --dry-run --ignore-scripts
 
-      - name: Build installable skill archive
+      - name: Build installable skill archives
         shell: bash
         env:
           ARCHIVE: ${{ steps.version.outputs.archive }}
+          PROTOCOL_ARCHIVE: ${{ steps.version.outputs.protocol_archive }}
         run: |
           set -euo pipefail
-          rm -f "$ARCHIVE" "$ARCHIVE.sha256"
+          rm -f "$ARCHIVE" "$ARCHIVE.sha256" "$PROTOCOL_ARCHIVE" "$PROTOCOL_ARCHIVE.sha256"
           cd skills
           zip -r "../$ARCHIVE" ppgp
           cd ..
+          cp "$ARCHIVE" "$PROTOCOL_ARCHIVE"
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+          sha256sum "$PROTOCOL_ARCHIVE" > "$PROTOCOL_ARCHIVE.sha256"
 
       - name: Create immutable release tag
         shell: bash
@@ -100,6 +107,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
           ARCHIVE: ${{ steps.version.outputs.archive }}
+          PROTOCOL_ARCHIVE: ${{ steps.version.outputs.protocol_archive }}
         shell: bash
         run: |
           set -euo pipefail
@@ -117,7 +125,7 @@ jobs:
           npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
           \`\`\`
 
-          Manual install: download \`${ARCHIVE}\`, extract it, then copy or upload the \`ppgp\` skill directory into an Agent Skills-compatible client.
+          Manual install: download \`${ARCHIVE}\`, extract it, then copy or upload the \`ppgp\` skill directory into an Agent Skills-compatible client. \`${PROTOCOL_ARCHIVE}\` is retained as the stable protocol-v0.1 download alias.
 
           npm and GitHub Packages publication are triggered automatically from this published GitHub Release.
 
@@ -133,6 +141,8 @@ jobs:
           gh release create "$TAG" \
             "$ARCHIVE" \
             "$ARCHIVE.sha256" \
+            "$PROTOCOL_ARCHIVE" \
+            "$PROTOCOL_ARCHIVE.sha256" \
             --verify-tag \
             --title "PPGP ${TAG} (Experimental)" \
             --notes-file release-notes.md

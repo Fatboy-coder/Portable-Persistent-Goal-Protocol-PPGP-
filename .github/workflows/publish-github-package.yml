@@ -1,13 +1,6 @@
 name: Publish PPGP to GitHub Packages
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Package version, for example 0.1.0"
-        required: true
-        default: "0.1.0"
-        type: string
   release:
     types: [published]
 
@@ -21,6 +14,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -30,33 +25,26 @@ jobs:
           scope: "@fatboy-coder"
           package-manager-cache: false
 
-      - name: Normalize package version
+      - name: Validate release version
         id: version
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_VERSION: ${{ inputs.version }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
 
-          if [[ "$EVENT_NAME" == "release" ]]; then
-            VERSION="${RELEASE_TAG#v}"
-          else
-            VERSION="$(printf '%s' "$INPUT_VERSION" | sed -E 's/^[[:space:]]*version:[[:space:]]*//' | tr -d '[:space:]')"
-            VERSION="${VERSION#v}"
-          fi
-
-          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            VERSION="${VERSION}.0"
-          fi
-
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid package version: '$VERSION'"
             exit 1
           fi
 
-          npm pkg set version="$VERSION"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "Release tag version $VERSION does not match package.json version $PACKAGE_VERSION."
+            exit 1
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Test source package
@@ -66,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TARBALL="$(npm pack --silent)"
+          TARBALL="$(npm pack --silent --ignore-scripts)"
           mkdir -p "$RUNNER_TEMP/ppgp-gh"
           tar -xzf "$TARBALL" -C "$RUNNER_TEMP/ppgp-gh" --strip-components=1
           cd "$RUNNER_TEMP/ppgp-gh"
@@ -95,6 +83,4 @@ jobs:
             exit 0
           fi
 
-          # Tests already ran against the source checkout. The prepared package intentionally
-          # excludes test/ from its published payload, so do not rerun lifecycle scripts here.
           npm publish --ignore-scripts --access public --registry="https://npm.pkg.github.com"
