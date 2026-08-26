@@ -29,7 +29,7 @@ npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
 
 This remains the preferred portable skill source.
 
-## Anthropic Claude Code
+## Anthropic Claude and Claude Code
 
 PPGP exposes a Claude plugin and a self-hosted marketplace from the canonical repository:
 
@@ -49,18 +49,27 @@ Claude
 → Fatboy-coder/ppgp
 → Sync
 → install ppgp
-→ /reload-plugins when activation is requested
 ```
 
-Claude Code namespaces plugin skills as `/plugin-name:skill-name`. The PPGP marketplace plugin and its single skill are both named `ppgp`, so the marketplace invocation is:
+The exact invocation depends on the Claude client surface.
+
+In the tested Claude client, the marketplace-installed skill is discovered and invoked with:
+
+```text
+/ppgp
+```
+
+That same environment reports `/reload-plugins` as unavailable, so it is not a universal activation step.
+
+Claude Code can namespace plugin skills as `/plugin-name:skill-name`. Where that namespace is exposed, the PPGP plugin and its single skill are both named `ppgp`, yielding:
 
 ```text
 /ppgp:ppgp
 ```
 
-The unnamespaced `/ppgp` form belongs to a standalone skill installed at a personal or project skill location, not to a marketplace plugin.
+Use `/reload-plugins` only in a Claude surface that actually exposes that command and requires plugin activation after an update. Do not assume one slash-command form or reload command applies to every Claude client.
 
-The dedicated `plugins/ppgp/` package exists because Claude copies installed plugins into its local cache. Its skill content is a deterministic mirror of the canonical `skills/ppgp/` source and is drift-tested. Marketplace installation and plugin enablement have been manually verified in a real Claude client. Public Anthropic directory listing is not claimed.
+The dedicated `plugins/ppgp/` package exists because Claude copies installed plugins into its cache. Its skill content is a deterministic mirror of the canonical `skills/ppgp/` source and is drift-tested. Marketplace installation, updated-skill loading and invocation have been manually verified in a real Claude client. Public Anthropic directory listing is not claimed.
 
 ## OpenAI Codex and ChatGPT
 
