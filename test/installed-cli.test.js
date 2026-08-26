@@ -44,9 +44,10 @@ try {
   const shim = path.join(binDir, process.platform === 'win32' ? 'ppgp.cmd' : 'ppgp');
   assert(fs.existsSync(shim), `installed ppgp binary shim missing: ${shim}`);
 
-  const executed = process.platform === 'win32'
-    ? run('cmd.exe', ['/d', '/s', '/c', `"${shim}" --version`], { cwd: temp })
-    : run(shim, ['--version'], { cwd: temp });
+  const executed = run(shim, ['--version'], {
+    cwd: temp,
+    shell: process.platform === 'win32'
+  });
 
   assert(executed.status === 0, `installed ppgp binary failed:\n${executed.stdout}\n${executed.stderr}`);
   assert(executed.stdout.trim() === pkg.version, `installed ppgp version mismatch: expected ${pkg.version}, got ${executed.stdout.trim()}`);
