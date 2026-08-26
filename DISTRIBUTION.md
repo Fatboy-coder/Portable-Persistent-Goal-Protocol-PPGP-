@@ -212,6 +212,20 @@ When diagnosing `npx` executable inference or npm cache behavior, the explicit n
 npm exec --yes --package=@fatboy-coder/ppgp@0.1.2 -- ppgp --version
 ```
 
+On Windows PowerShell, some npm versions can route `npm` through the `npm.ps1` wrapper and mis-handle forwarded arguments. If the command above prints the npm version instead of the PPGP version, bypass the wrapper explicitly:
+
+```powershell
+npm.cmd exec --yes --package=@fatboy-coder/ppgp@0.1.2 -- ppgp --version
+```
+
+Expected output:
+
+```text
+0.1.2
+```
+
+This is a shell-wrapper issue, not evidence that the PPGP package lacks its CLI binary. PPGP CI packs and installs the package on Windows and verifies the generated `ppgp.cmd` shim by executing `ppgp --version`.
+
 A plain `ppgp` command is expected only after the package has been installed globally or linked for local development:
 
 ```bash
