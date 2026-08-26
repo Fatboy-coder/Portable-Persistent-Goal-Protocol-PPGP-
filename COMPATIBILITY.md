@@ -69,4 +69,4 @@ Current state after this iteration:
 - Cursor Agent Plugin: structurally ready, Cursor Marketplace submission not claimed.
 - Gemini extension: structurally ready, manual CLI install test required.
 
-PPGP v0.1 remains experimental regardless of distribution surface.
+PPGP v0.1.2 remains experimental regardless of distribution surface.
