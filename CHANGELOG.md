@@ -1,8 +1,23 @@
 # Changelog
 
+## 0.1.2 - 2026-08-26
+
+Version-consistency and release-hardening patch.
+
+Includes:
+
+- one canonical current version, `0.1.2`, across the specification, npm package, versioned adapters, Agent Skill metadata, citation metadata and public documentation;
+- CLI `status` and `handoff` protocol headers derived from `package.json` instead of a hard-coded `PPGP/0.1` value;
+- current README download text and asset links normalized to `ppgp-v0.1.2.zip`;
+- removal of the stale protocol-level `ppgp-v0.1.zip` alias from future release generation;
+- explicit separation between historical release numbers, benchmark schema versions and the current PPGP release version;
+- automated version-consistency assertions to prevent future documentation/package drift.
+
+This patch does not change the continuity model introduced in the experimental line. It makes the current release identity internally consistent and machine-checked.
+
 ## 0.1.1 - 2026-08-26
 
-Package and distribution release for PPGP protocol v0.1.
+Historical package and distribution release.
 
 Includes:
 
@@ -16,9 +31,9 @@ Includes:
 - falsifiable recovery evaluation cases;
 - paired A/B benchmark protocol, machine-readable result schema, reporter, and deterministic Pilot 01 fixture/materializer;
 - npm payload hardening so benchmark tooling is actually shipped;
-- a single guarded GitHub Release gate that triggers npmjs and GitHub Packages publication.
+- a guarded GitHub Release gate and downstream package-publication workflows.
 
-This release does not change PPGP protocol semantics beyond the clarified v0.1 recovery model. The protocol specification version remains `0.1`.
+At this historical point the package/adapters used `0.1.1` while several protocol-facing texts and CLI headers still identified the protocol as `0.1`. That version drift is explicitly corrected in 0.1.2.
 
 ## 0.1 - 2026-08-24
 
@@ -37,4 +52,4 @@ Includes:
 - Agent Skills-compatible `ppgp` skill;
 - `init`, `goal`, `status`, `handoff`, `distill`, and `close` operations.
 
-No performance or universality benchmark claim is made in v0.1.
+No performance or universality benchmark claim was made in v0.1.
