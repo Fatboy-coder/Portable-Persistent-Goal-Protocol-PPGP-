@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, for example 0.1"
+        description: "Semantic release version, for example 0.1.1"
         required: true
-        default: "0.1"
         type: string
 
 permissions:
@@ -21,6 +20,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@fatboy-coder"
+          package-manager-cache: false
+
       - name: Normalize and validate version
         id: version
         shell: bash
@@ -29,23 +36,43 @@ jobs:
         run: |
           set -euo pipefail
 
-          RAW_VERSION="$(printf '%s' "$RELEASE_VERSION" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
-          VERSION="$(printf '%s' "$RAW_VERSION" | sed -E 's/^[Vv][Ee][Rr][Ss][Ii][Oo][Nn][[:space:]]*:[[:space:]]*//; s/^[Vv][[:space:]]*//; s/[[:space:]]+//g')"
+          VERSION="$(printf '%s' "$RELEASE_VERSION" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^[Vv]//; s/[[:space:]]+//g')"
 
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid release version: '$RELEASE_VERSION'"
-            echo "Accepted examples: 0.1, v0.1, 0.1.0, or version: 0.1"
+            echo "Use an immutable three-part SemVer such as 0.1.1."
             exit 1
           fi
 
           TAG="v${VERSION}"
           git check-ref-format "refs/tags/${TAG}"
 
-          echo "Normalized release version: ${VERSION}"
-          echo "Release tag: ${TAG}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Release tag $TAG already exists. Refusing to overwrite an immutable release."
+            exit 1
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub release $TAG already exists. Refusing to overwrite an immutable release."
+            exit 1
+          fi
+
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "archive=ppgp-v${VERSION}.zip" >> "$GITHUB_OUTPUT"
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Validate source and npm payload
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          npm pkg set version="$VERSION"
+          npm test
+          npm pack --dry-run --ignore-scripts
 
       - name: Build installable skill archive
         shell: bash
@@ -59,22 +86,16 @@ jobs:
           cd ..
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
-      - name: Create release tag
+      - name: Create immutable release tag
         shell: bash
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists on origin."
-          else
-            git tag "$TAG" "$GITHUB_SHA"
-            git push origin "$TAG"
-          fi
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
 
       - name: Publish GitHub release
         env:
@@ -101,22 +122,20 @@ jobs:
 
           Manual install: download \`${ARCHIVE}\`, extract it, then copy or upload the \`ppgp\` skill directory into an Agent Skills-compatible client.
 
+          npm and GitHub Packages publication are triggered automatically from this published GitHub Release.
+
           ## Test and evaluate
 
-          Read \`EVALUATION.md\` and report reproducible results through the repository issue forms.
+          Read \`EVALUATION.md\` and \`BENCHMARK_PROTOCOL.md\` for the current evaluation methodology and reproducible pilot infrastructure.
 
           ## Specification and citation
 
           Use the exact version evaluated. See \`SPEC.md\` and \`CITATION.cff\`.
           EOF
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
-          else
-            gh release create "$TAG" \
-              "$ARCHIVE" \
-              "$ARCHIVE.sha256" \
-              --verify-tag \
-              --title "PPGP ${TAG} (Experimental)" \
-              --notes-file release-notes.md
-          fi
+          gh release create "$TAG" \
+            "$ARCHIVE" \
+            "$ARCHIVE.sha256" \
+            --verify-tag \
+            --title "PPGP ${TAG} (Experimental)" \
+            --notes-file release-notes.md
