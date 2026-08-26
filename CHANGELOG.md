@@ -1,19 +1,24 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 - 2026-08-26
 
-Distribution infrastructure for PPGP v0.1:
+Package and distribution release for PPGP protocol v0.1.
 
-- Claude Code plugin + self-hosted marketplace manifests;
+Includes:
+
+- Claude Code plugin + self-hosted marketplace packaging;
 - OpenAI Codex plugin + repository marketplace metadata;
 - Google Gemini CLI extension manifest;
 - open Agent Plugin manifest for compatible clients such as Cursor;
-- generated `.agents/skills/ppgp/` compatibility mirror for clients that discover the cross-agent path;
-- deterministic mirror sync helper and byte-for-byte drift tests;
-- cross-platform compatibility matrix and installation documentation;
-- GitHub Actions validation for CLI + distribution invariants.
+- generated `.agents/skills/ppgp/` compatibility mirror with drift tests;
+- canonical project identity and evidence-status metadata inside the Agent Skill;
+- explicit `ACTIVE_GOAL` hot-state recovery semantics;
+- falsifiable recovery evaluation cases;
+- paired A/B benchmark protocol, machine-readable result schema, reporter, and deterministic Pilot 01 fixture/materializer;
+- npm payload hardening so benchmark tooling is actually shipped;
+- a single guarded GitHub Release gate that triggers npmjs and GitHub Packages publication.
 
-This does not change PPGP protocol semantics or the protocol version.
+This release does not change PPGP protocol semantics beyond the clarified v0.1 recovery model. The protocol specification version remains `0.1`.
 
 ## 0.1 - 2026-08-24
 
