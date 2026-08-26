@@ -133,7 +133,7 @@ function cmdGoal(root, positional, force) {
 
 function cmdStatus(root) {
   const { file, sections } = readActiveGoal(root);
-  console.log(`PPGP/0.1 status from ${file}`);
+  console.log(`PPGP/${pkg.version} status from ${file}`);
   console.log(`goal: ${oneLine(sections.GOAL)}`);
   console.log(`phase: ${oneLine(sections.PHASE)}`);
   console.log(`frozen: ${oneLine(sections.FROZEN_DECISIONS)}`);
@@ -147,7 +147,7 @@ function cmdStatus(root) {
 
 function cmdHandoff(root) {
   const { sections } = readActiveGoal(root);
-  console.log('PPGP/0.1');
+  console.log(`PPGP/${pkg.version}`);
   console.log(`G=${oneLine(sections.GOAL)}`);
   console.log(`P=${oneLine(sections.PHASE)}`);
   console.log(`F:${oneLine(sections.FROZEN_DECISIONS)}`);

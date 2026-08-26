@@ -3,7 +3,7 @@
   "experimentId": "example-pilot",
   "pairId": "pair-001",
   "condition": "ppgp",
-  "ppgpVersion": "0.1",
+  "ppgpVersion": "0.1.2",
   "repository": "example/repository",
   "baseCommit": "0123456789abcdef",
   "taskId": "example-multifile-refactor",

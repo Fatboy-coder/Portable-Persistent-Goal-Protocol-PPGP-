@@ -1,4 +1,4 @@
-# PPGP v0.1 Compact Reference
+# PPGP v0.1.2 Compact Reference
 
 ## Objective
 

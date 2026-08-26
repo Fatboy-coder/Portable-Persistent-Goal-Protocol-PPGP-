@@ -2,9 +2,9 @@
 
 PPGP is currently experimental. The roadmap prioritizes evidence, portability and reduction of unnecessary protocol overhead.
 
-## v0.1
+## v0.1.2
 
-Published and available for public testing.
+Published as the current experimental line and available for public testing.
 
 Current capabilities:
 
@@ -16,7 +16,9 @@ Current capabilities:
 - compact handoff format;
 - Agent Skills-compatible implementation;
 - downloadable skill package;
-- public specification, citation metadata and evaluation guide.
+- public specification, citation metadata and evaluation guide;
+- explicit ACTIVE_GOAL hot-state recovery semantics;
+- reproducible paired benchmark infrastructure.
 
 ## Next priorities
 

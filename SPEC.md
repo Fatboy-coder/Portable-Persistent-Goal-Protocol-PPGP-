@@ -1,7 +1,8 @@
-# PPGP Specification v0.1
+# PPGP Specification v0.1.2
 
 Status: Experimental / Provisional  
-Published: 2026-08-24  
+First published: 2026-08-24  
+Current release: 2026-08-26  
 Protocol: Portable Persistent Goal Protocol (PPGP)
 
 ## 1. Scope
@@ -262,7 +263,7 @@ Handoffs SHOULD prefer compact structured state or deltas over narrative transcr
 Example:
 
 ```text
-PPGP/0.1
+PPGP/0.1.2
 G=8
 P=HARDEN
 
@@ -318,7 +319,7 @@ Implementations MAY measure:
 - VWR: Verified Work Rate.
 - MCR: Memory Compression Ratio.
 
-PPGP v0.1 defines these metrics but makes no benchmark claim.
+PPGP v0.1.2 defines these metrics but makes no benchmark claim.
 
 ## 14. Interoperability
 

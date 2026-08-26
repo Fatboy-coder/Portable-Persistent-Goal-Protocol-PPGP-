@@ -18,19 +18,25 @@ function readJson(rel) {
   return JSON.parse(fs.readFileSync(path.join(repo, rel), 'utf8'));
 }
 
+function readText(rel) {
+  return fs.readFileSync(path.join(repo, rel), 'utf8');
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
 try {
   const pkg = readJson('package.json');
-  assert(run(['--version']).trim() === pkg.version, `version output mismatch: expected ${pkg.version}`);
+  const version = pkg.version;
+  assert(run(['--version']).trim() === version, `version output mismatch: expected ${version}`);
   run(['init', '--root', root]);
   run(['goal', 'Ship', 'the', 'test', '--root', root]);
   const activeGoal = path.join(root, 'docs', 'ACTIVE_GOAL.md');
   assert(fs.existsSync(activeGoal), 'ACTIVE_GOAL was not created');
+  assert(run(['status', '--root', root]).includes(`PPGP/${version} status`), 'status protocol header version mismatch');
   assert(run(['status', '--root', root]).includes('goal: Ship the test'), 'status did not recover goal');
-  assert(run(['handoff', '--root', root]).includes('PPGP/0.1'), 'handoff header missing');
+  assert(run(['handoff', '--root', root]).includes(`PPGP/${version}`), 'handoff protocol header version mismatch');
 
   const claudePlugin = readJson('.claude-plugin/plugin.json');
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
@@ -42,7 +48,7 @@ try {
 
   for (const [name, manifest] of Object.entries({ codexPlugin, agentPlugin, gemini })) {
     assert(manifest.name === 'ppgp', `${name} name mismatch`);
-    assert(manifest.version === pkg.version, `${name} version mismatch`);
+    assert(manifest.version === version, `${name} version mismatch`);
   }
 
   for (const [name, manifest] of Object.entries({ claudePlugin, packagedClaudePlugin })) {
@@ -68,16 +74,45 @@ try {
   assert(fs.existsSync(path.join(repo, 'skills', 'ppgp', 'SKILL.md')), 'canonical skill missing');
   assert(fs.existsSync(path.join(repo, 'skills', 'ppgp', 'references', 'PPGP.md')), 'canonical reference missing');
 
-  const canonicalSkill = fs.readFileSync(path.join(repo, 'skills', 'ppgp', 'SKILL.md'), 'utf8');
-  const agentsSkill = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
-  const claudeSkill = fs.readFileSync(path.join(repo, 'plugins', 'ppgp', 'skills', 'ppgp', 'SKILL.md'), 'utf8');
-  const canonicalRef = fs.readFileSync(path.join(repo, 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
-  const agentsRef = fs.readFileSync(path.join(repo, '.agents', 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
-  const claudeRef = fs.readFileSync(path.join(repo, 'plugins', 'ppgp', 'skills', 'ppgp', 'references', 'PPGP.md'), 'utf8');
+  const canonicalSkill = readText('skills/ppgp/SKILL.md');
+  const agentsSkill = readText('.agents/skills/ppgp/SKILL.md');
+  const claudeSkill = readText('plugins/ppgp/skills/ppgp/SKILL.md');
+  const canonicalRef = readText('skills/ppgp/references/PPGP.md');
+  const agentsRef = readText('.agents/skills/ppgp/references/PPGP.md');
+  const claudeRef = readText('plugins/ppgp/skills/ppgp/references/PPGP.md');
   assert(canonicalSkill === agentsSkill, '.agents skill mirror drifted from canonical SKILL.md');
   assert(canonicalRef === agentsRef, '.agents reference mirror drifted from canonical PPGP.md');
   assert(canonicalSkill === claudeSkill, 'Claude packaged skill mirror drifted from canonical SKILL.md');
   assert(canonicalRef === claudeRef, 'Claude packaged reference mirror drifted from canonical PPGP.md');
+
+  const currentVersionChecks = [
+    ['README.md', `**Status:** Experimental v${version}`],
+    ['README.md', `ppgp-v${version}.zip`],
+    ['SPEC.md', `# PPGP Specification v${version}`],
+    ['EVALUATION.md', `PPGP v${version} is experimental.`],
+    ['CONTRIBUTING.md', `PPGP v${version} is intentionally provisional.`],
+    ['COMPATIBILITY.md', `PPGP v${version} remains experimental`],
+    ['DISTRIBUTION.md', `PPGP specification ${version}`],
+    ['DISTRIBUTION.md', `@fatboy-coder/ppgp@${version}`],
+    ['ROADMAP.md', `## v${version}`],
+    ['skills/ppgp/SKILL.md', `version: "${version}"`],
+    ['skills/ppgp/SKILL.md', `PPGP/${version}`],
+    ['skills/ppgp/references/PPGP.md', `# PPGP v${version} Compact Reference`],
+    ['CITATION.cff', `version: "${version}"`],
+    ['BENCHMARK_PROTOCOL.md', `Protocol under test: PPGP v${version}`],
+    ['benchmarks/examples/pair-001-ppgp.json', `"ppgpVersion": "${version}"`],
+  ];
+
+  for (const [file, expected] of currentVersionChecks) {
+    assert(readText(file).includes(expected), `${file} is not aligned with current version ${version}: missing ${expected}`);
+  }
+
+  const readme = readText('README.md');
+  const distribution = readText('DISTRIBUTION.md');
+  const releaseWorkflow = readText('.github/workflows/publish-release.yml');
+  assert(!readme.includes('releases/latest/download/ppgp-v0.1.zip'), 'README still points at stale ppgp-v0.1.zip alias');
+  assert(!distribution.includes('npm 0.1.0'), 'DISTRIBUTION still contains stale npm 0.1.0 guidance');
+  assert(!releaseWorkflow.includes('protocol_archive=ppgp-v0.1.zip'), 'release workflow must not regenerate a stale protocol-version alias');
 
   assert(!pkg.files.includes('.agents/'), 'platform adapters must not silently change npm package contents');
   assert(!pkg.files.includes('.claude-plugin/'), 'Claude adapter must not silently change npm package contents');
@@ -86,7 +121,7 @@ try {
   assert(!pkg.files.includes('gemini-extension.json'), 'Gemini adapter must not silently change npm package contents');
   assert(!pkg.files.includes('plugins/'), 'Claude packaged plugin must not silently change npm package contents');
 
-  console.log('PPGP CLI and distribution tests passed.');
+  console.log('PPGP CLI, version consistency, and distribution tests passed.');
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }

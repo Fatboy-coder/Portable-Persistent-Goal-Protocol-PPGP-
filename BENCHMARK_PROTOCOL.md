@@ -1,7 +1,8 @@
-# PPGP Recovery Benchmark Protocol v0.1
+# PPGP Recovery Benchmark Protocol
 
+Benchmark method version: 0.1  
 Status: Experimental / exploratory  
-Protocol under test: PPGP v0.1  
+Protocol under test: PPGP v0.1.2  
 Primary question: does repository-visible PPGP state improve recovery after an abrupt loss of conversational context?
 
 This document defines a reproducible paired A/B experiment. It is an evaluation protocol, not evidence that PPGP is effective.
@@ -343,7 +344,7 @@ Report excluded runs and reasons.
 A benchmark report should include:
 
 - protocol version;
-- benchmark protocol version;
+- benchmark method version;
 - task list;
 - model/client versions;
 - condition order;
