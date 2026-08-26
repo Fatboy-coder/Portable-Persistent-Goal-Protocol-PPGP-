@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const { spawnSync } = require('child_process');
 const path = require('path');
 
@@ -8,6 +9,9 @@ const repo = path.resolve(__dirname, '..');
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+const pkg = JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8'));
+assert(pkg.bin && pkg.bin.ppgp === 'bin/ppgp.js', 'package.json must publish the ppgp CLI binary at bin/ppgp.js');
 
 const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
   cwd: repo,
@@ -42,4 +46,4 @@ for (const required of [
   assert(files.has(required), `published npm package is missing ${required}`);
 }
 
-console.log('PPGP npm package contents verified.');
+console.log('PPGP npm package contents and CLI bin mapping verified.');
