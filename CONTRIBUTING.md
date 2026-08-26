@@ -1,6 +1,6 @@
 # Contributing to PPGP
 
-PPGP v0.1 is intentionally provisional.
+PPGP v0.1.2 is intentionally provisional.
 
 The project is being published early so developers can test it on real repositories, challenge its assumptions, simplify it and report failures.
 
