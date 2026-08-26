@@ -49,9 +49,18 @@ Claude
 → Fatboy-coder/ppgp
 → Sync
 → install ppgp
+→ /reload-plugins when activation is requested
 ```
 
-The dedicated `plugins/ppgp/` package exists because Claude copies installed plugins into its local cache. Its skill content is a deterministic mirror of the canonical `skills/ppgp/` source and is drift-tested. Marketplace installation, plugin enablement and `/ppgp` discovery have been manually verified in the real Claude client. Public Anthropic directory listing is not claimed.
+Claude Code namespaces plugin skills as `/plugin-name:skill-name`. The PPGP marketplace plugin and its single skill are both named `ppgp`, so the marketplace invocation is:
+
+```text
+/ppgp:ppgp
+```
+
+The unnamespaced `/ppgp` form belongs to a standalone skill installed at a personal or project skill location, not to a marketplace plugin.
+
+The dedicated `plugins/ppgp/` package exists because Claude copies installed plugins into its local cache. Its skill content is a deterministic mirror of the canonical `skills/ppgp/` source and is drift-tested. Marketplace installation and plugin enablement have been manually verified in a real Claude client. Public Anthropic directory listing is not claimed.
 
 ## OpenAI Codex and ChatGPT
 
@@ -197,11 +206,23 @@ npx @fatboy-coder/ppgp status
 npx @fatboy-coder/ppgp handoff
 ```
 
-Global installation keeps the shorter executable:
+When diagnosing `npx` executable inference or npm cache behavior, the explicit npm-exec form removes ambiguity about which binary must run:
 
 ```bash
-npm install -g @fatboy-coder/ppgp
-ppgp init
+npm exec --yes --package=@fatboy-coder/ppgp@0.1.2 -- ppgp --version
+```
+
+A plain `ppgp` command is expected only after the package has been installed globally or linked for local development:
+
+```bash
+npm install -g @fatboy-coder/ppgp@0.1.2
+ppgp --version
+```
+
+Inside the PPGP source repository itself, the source CLI can always be tested directly without any installation:
+
+```bash
+node ./bin/ppgp.js --version
 ```
 
 The npm package bundles the canonical Agent Skill, benchmark protocol, deterministic benchmark reporter and Pilot 01 preparation tooling. Platform adapter manifests remain excluded from the npm payload because they are repository distribution surfaces rather than CLI package contents.
@@ -256,7 +277,7 @@ Manual recovery dispatches exist for downstream publication if an already-create
 - platform adapter directories do not silently enter the npm package contents;
 - public current-version documentation, citation metadata and CLI protocol headers remain aligned with the committed package version.
 
-GitHub Actions runs the same test suite for pushes and pull requests.
+GitHub Actions runs the test suite on Linux and Windows and includes an installed-package CLI smoke test that verifies the platform-specific `ppgp` binary shim after packing and installing the package.
 
 ## Version mapping
 
