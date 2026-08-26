@@ -8,7 +8,6 @@ const { spawnSync } = require('child_process');
 const repo = path.resolve(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(repo, 'package.json'), 'utf8'));
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'ppgp-installed-cli-'));
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -18,10 +17,14 @@ function run(command, args, options = {}) {
   return spawnSync(command, args, { encoding: 'utf8', ...options });
 }
 
+function runNpm(args, options = {}) {
+  return run('npm', args, { shell: process.platform === 'win32', ...options });
+}
+
 let tarballPath = null;
 
 try {
-  const packed = run(npmCommand, ['pack', '--silent', '--ignore-scripts'], { cwd: repo });
+  const packed = runNpm(['pack', '--silent', '--ignore-scripts'], { cwd: repo });
   assert(packed.status === 0, `npm pack failed:\n${packed.stdout}\n${packed.stderr}`);
 
   const tarball = packed.stdout.trim().split(/\r?\n/).filter(Boolean).pop();
@@ -31,8 +34,7 @@ try {
 
   fs.writeFileSync(path.join(temp, 'package.json'), JSON.stringify({ private: true }, null, 2));
 
-  const installed = run(
-    npmCommand,
+  const installed = runNpm(
     ['install', tarballPath, '--ignore-scripts', '--no-audit', '--no-fund'],
     { cwd: temp }
   );
