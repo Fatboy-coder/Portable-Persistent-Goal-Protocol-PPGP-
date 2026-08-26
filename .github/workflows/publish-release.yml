@@ -127,7 +127,7 @@ jobs:
 
           Manual install: download \`${ARCHIVE}\`, extract it, then copy or upload the \`ppgp\` skill directory into an Agent Skills-compatible client. \`${PROTOCOL_ARCHIVE}\` is retained as the stable protocol-v0.1 download alias.
 
-          npm and GitHub Packages publication are triggered automatically from this published GitHub Release.
+          Successful completion of this release workflow triggers npm publication, which then triggers GitHub Packages publication.
 
           ## Test and evaluate
 
