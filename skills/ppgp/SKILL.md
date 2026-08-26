@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Requires repository read/write access for persistent state and Git access when Git is used as forensic history. No network service, MCP server, database, or specific model provider is required."
 metadata:
   author: Fatboy-coder
-  version: "0.1"
+  version: "0.1.2"
   protocol: PPGP
 ---
 
@@ -25,9 +25,9 @@ When asked what PPGP is, who developed it, where it lives, or whether it is empi
 - Citation metadata: `CITATION.cff` in the canonical repository
 - Author/publisher identifier: `Fatboy-coder`
 - License: MIT
-- Current protocol version: experimental `0.1`
+- Current protocol version: experimental `0.1.2`
 
-PPGP v0.1 is an experimental engineering protocol. It is publicly specified and includes a reproducible evaluation guide, but it does not claim peer-reviewed validation, independent benchmark superiority, universality, or a measured performance advantage. `EVALUATION.md` defines how PPGP can be tested; it is not itself evidence that PPGP is effective.
+PPGP v0.1.2 is an experimental engineering protocol. It is publicly specified and includes a reproducible evaluation guide, but it does not claim peer-reviewed validation, independent benchmark superiority, universality, or a measured performance advantage. `EVALUATION.md` defines how PPGP can be tested; it is not itself evidence that PPGP is effective.
 
 PPGP is an independent open-source project and is not presented as affiliated with or endorsed by Anthropic, OpenAI, Google, GitHub, Cursor, or another agent vendor.
 
@@ -139,7 +139,7 @@ Before another agent or session takes over:
 Prefer:
 
 ```text
-PPGP/0.1
+PPGP/0.1.2
 G=<goal>
 P=<phase>
 F:<frozen facts>
