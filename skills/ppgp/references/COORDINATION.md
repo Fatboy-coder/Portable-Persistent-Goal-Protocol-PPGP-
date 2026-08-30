@@ -74,7 +74,6 @@ Record the smallest true scope.
 kind = EXTERNAL | AUTHORITY | TECHNICAL
 scope = ACTION | WORKSTREAM | GOAL | PROJECT
 resume_condition = observable condition
-independent_work_remaining = yes | no
 ```
 
 Before promoting a wait to workstream scope, ask:
@@ -94,11 +93,15 @@ A lease says which executor currently owns mutation of a workstream.
 Recommended states:
 
 ```text
-ACTIVE
+CLAIMED
 HANDOFF_READY
 RECOVERY_REQUIRED
 RELEASED
 ```
+
+Use a monotonically increasing generation or equivalent fencing value when takeovers/concurrent writers are possible.
+
+A stale generation must not overwrite a newer canonical generation.
 
 Lease loss does not authorize destructive cleanup.
 
@@ -130,6 +133,7 @@ clean
 stash foreign work
 commit foreign work
 overwrite
+repurpose
 ```
 
 Prefer an isolated workspace when safely available.
@@ -137,6 +141,48 @@ Prefer an isolated workspace when safely available.
 For Git repositories, a linked worktree is a normal implementation option.
 
 Creating safe isolation is normally agent-solvable and should not become a human approval gate unless project policy forbids it.
+
+## Authority gates
+
+Bind authority to a specific action.
+
+Recommended lifecycle:
+
+```text
+REQUIRED
+GRANTED
+CONSUMED
+REVOKED
+```
+
+An agent cannot self-grant authority.
+
+A granted gate authorizes only the named action/scope.
+
+Do not store secrets merely to model authority.
+
+## Dependencies
+
+Dependencies must be explicit when they affect scheduling.
+
+A minimal dependency is:
+
+```text
+workstream=<id>
+condition=COMPLETED
+```
+
+Do not infer dependencies from branch names, checkout location, agent identity, document order, or conversation order.
+
+Reject cycles.
+
+## Revision / CAS
+
+Canonical machine state should carry a revision or equivalent compare-and-swap mechanism when multiple writers are possible.
+
+A stale revision must not silently overwrite newer state.
+
+The reference CLI uses integer revisions plus a local mutation lock. Multi-machine implementations need atomic storage or equivalent CAS.
 
 ## Durability
 
@@ -167,9 +213,11 @@ VERIFY
 -> update goal/workstream state
 -> record workspace + durability
 -> record NEXT
+-> transfer/release lease
 -> emit compact handoff
--> mark lease HANDOFF_READY/RELEASED
 ```
+
+A handoff to a new executor should increment lease generation atomically.
 
 ## Abrupt takeover
 
@@ -188,7 +236,7 @@ Then:
 4. compare with last checkpoint
 5. classify durability/uncertainty
 6. verify proportionately
-7. record takeover/new lease
+7. record takeover/new lease generation
 8. continue smallest verified next action
 ```
 
@@ -197,9 +245,11 @@ Do not normalize with destructive Git operations merely to obtain a clean status
 ## Project scheduler rule
 
 ```text
-if any permitted workstream is RUNNABLE or RUNNING:
+if any eligible workstream is RUNNABLE or RUNNING:
     project is not blocked
 ```
+
+RECOVERY_REQUIRED should be inspected before duplicating replacement work.
 
 Before asking the human about one blocked workstream, continue another useful workstream when safe and within delegated scope.
 
