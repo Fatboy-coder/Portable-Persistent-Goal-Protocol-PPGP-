@@ -24,23 +24,29 @@ Current capabilities:
 
 v0.2.0 is being designed from observed coordination failures in real long-running multi-agent coding work.
 
-The release should extend continuity from one active goal to safe recovery and scheduling when several workstreams, agents, branches, worktrees, and partial wait conditions coexist.
+The release should extend continuity from one active goal to safe recovery and scheduling when several workstreams, agents, branches, worktrees, partial wait conditions, and temporary executor interruptions coexist.
 
 Primary design RFC:
 
 - [`rfcs/0001-concurrent-workstreams-leases-partial-blocking.md`](./rfcs/0001-concurrent-workstreams-leases-partial-blocking.md)
 
+Generalized design evidence:
+
+- [`evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md`](./evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md)
+
 Target protocol additions:
 
-- optional WORKSTREAM_REGISTRY for concurrent active work;
-- lifecycle PHASE separated from SCHEDULABILITY;
-- RUNNABLE, RUNNING, WAITING_EXTERNAL, WAITING_AUTHORITY, BLOCKED_TECHNICAL, PARKED, and COMPLETED scheduling states;
-- scoped wait conditions so one unavailable dependency does not falsely block independent work;
+- optional project-level PORTFOLIO / workstream coordination when concurrent active work exists;
+- WORKSTREAM as an independently schedulable unit;
+- lifecycle PHASE separated from RUN_STATE;
+- compact RUN_STATE values: RUNNABLE, RUNNING, WAITING, RECOVERY_REQUIRED, PARKED, COMPLETED;
+- scoped typed wait conditions so one unavailable dependency does not falsely block independent work;
 - temporary EXECUTION_LEASE ownership;
 - exclusive writable CHECKOUT_CLAIM semantics;
 - isolated-workspace preference when a shared checkout contains foreign dirty work;
-- explicit RECOVERY_REQUIRED takeover after abrupt agent unavailability;
+- explicit non-destructive takeover after abrupt agent unavailability;
 - unfinished-work durability levels from SESSION_ONLY through REMOTE_DURABLE;
+- executor unavailability treated as runtime capacity rather than an automatic GOAL blocker;
 - project-level invariant that a blocked workstream does not block unrelated runnable work;
 - backward compatibility for v0.1.2 single-ACTIVE_GOAL repositories.
 
@@ -52,11 +58,11 @@ Before v0.2.0 is released:
 2. update the normative specification without creating a second source of truth;
 3. extend the Agent Skill and compact reference;
 4. extend the CLI with the smallest useful coordination operations;
-5. add deterministic conformance cases for shared-checkout protection, partial external waits, abrupt takeover, and unrelated runnable workstreams;
+5. add deterministic conformance cases for shared-checkout protection, partial external waits, abrupt takeover, mixed waits, and unrelated runnable workstreams;
 6. update all versioned adapters and mirrors atomically;
 7. pass existing v0.1.x recovery tests plus new v0.2 coordination tests;
 8. validate packaging and version consistency;
-9. document the motivating incident only in generalized, non-project-specific form;
+9. keep motivating incidents generalized and free of private product details;
 10. release as experimental without a superiority or universality claim.
 
 ## Evidence priorities
@@ -75,7 +81,7 @@ Validate that the same repository-visible state can be interpreted consistently 
 
 ### Test concurrency semantics
 
-Test whether fresh agents can safely distinguish workstream ownership, checkout ownership, scoped blockers, recoverable dirty state, and the next runnable work without human reconstruction.
+Test whether fresh agents can safely distinguish workstream ownership, checkout ownership, scoped blockers, executor interruptions, recoverable dirty state, and the next runnable work without human reconstruction.
 
 ### Clarify conformance
 
