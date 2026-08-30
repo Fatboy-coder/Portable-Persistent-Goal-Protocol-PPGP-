@@ -115,7 +115,7 @@ try {
     );
   }
 
-  // Reference schemas remain parseable and explicitly non-v0.1.
+  // Reference schemas remain parseable and explicitly v0.2.
   const portfolioSchema = readJson('schemas/portfolio.schema.json');
   const workstreamSchema = readJson('schemas/workstream.schema.json');
   assert(portfolioSchema.properties.schemaVersion.const === '0.2', 'portfolio schema version mismatch');
@@ -138,14 +138,23 @@ try {
     ['ROADMAP.md', `## v${version}`],
     ['skills/ppgp/SKILL.md', `version: "${version}"`],
     ['skills/ppgp/references/PPGP.md', `# PPGP v${version} Compact Reference`],
-    ['CITATION.cff', `version: "${version}"`],
-    ['BENCHMARK_PROTOCOL.md', `Protocol under test: PPGP v${version}`],
-    ['benchmarks/examples/pair-001-ppgp.json', `"ppgpVersion": "${version}"`]
+    ['CITATION.cff', `version: "${version}"`]
   ];
 
   for (const [file, expected] of currentVersionChecks) {
     assert(readText(file).includes(expected), `${file} is not aligned with current version ${version}: missing ${expected}`);
   }
+
+  // The original paired benchmark is deliberately versioned to the v0.1.2 recovery model.
+  // Do not relabel it as a v0.2 coordination benchmark without changing the experiment.
+  assert(
+    readText('BENCHMARK_PROTOCOL.md').includes('Protocol under test: PPGP v0.1.2'),
+    'historical recovery benchmark protocol version changed without a benchmark redesign'
+  );
+  assert(
+    readText('benchmarks/examples/pair-001-ppgp.json').includes('"ppgpVersion": "0.1.2"'),
+    'historical benchmark fixture version changed without a benchmark redesign'
+  );
 
   // Historical stale aliases must not return.
   const readme = readText('README.md');
@@ -164,7 +173,7 @@ try {
   assert(!pkg.files.includes('plugins/'), 'Claude packaged plugin must not silently change npm package contents');
   assert(pkg.files.includes('schemas/'), 'v0.2 reference schemas must be included in npm package');
 
-  console.log('PPGP CLI, v0.2 schemas, mirror parity, version consistency, and distribution tests passed.');
+  console.log('PPGP CLI, v0.2 schemas, mirror parity, release version consistency, and distribution tests passed.');
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
