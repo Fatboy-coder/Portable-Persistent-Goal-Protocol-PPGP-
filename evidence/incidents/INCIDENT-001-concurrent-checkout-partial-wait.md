@@ -86,12 +86,12 @@ This separated two truths that had previously been conflated:
 
 ```text
 LOCAL_ENGINEERING = RUNNABLE/RUNNING
-REMOTE_EXECUTION  = WAITING_EXTERNAL
+REMOTE_EXECUTION  = external action wait
 ```
 
-## Failure pattern 3: abrupt agent unavailability with dirty isolated work
+## Failure pattern 3: abrupt executor unavailability with dirty isolated work
 
-After substantial local progress, Agent B became unavailable before a cooperative handoff.
+After substantial local progress, Agent B became temporarily unavailable before a cooperative handoff.
 
 The isolated worktree contained many modified files and significant uncommitted changes.
 
@@ -103,6 +103,18 @@ The work was still present on the host, but PPGP v0.1.x did not explicitly repre
 - dirty-workspace recovery rules;
 - durability level of unfinished work.
 
+The executor becoming unavailable did not make the underlying workstream semantically blocked.
+
+Protocol lesson:
+
+```text
+executor unavailable
+!=
+workstream blocked
+```
+
+A provider cooldown, quota boundary, process crash, terminal loss, or similar executor interruption is an execution-capacity event. It SHOULD NOT be promoted into a GOAL blocker when another compatible executor can safely recover or continue the work.
+
 ## Recovery requirement
 
 A replacement agent must be able to inspect and continue the dirty isolated worktree without treating it as corruption and without resetting it merely to obtain a clean Git state.
@@ -110,7 +122,7 @@ A replacement agent must be able to inspect and continue the dirty isolated work
 The correct recovery sequence is observation before mutation:
 
 ```text
-read goal state
+read goal and portfolio state
 -> inspect workspace
 -> identify branch/HEAD/dirtiness
 -> preserve changes
@@ -120,9 +132,13 @@ read goal state
 -> continue
 ```
 
+If the prior lease ended cleanly and no ambiguous mutable state remains, executor unavailability may simply make the workstream RUNNABLE again.
+
+If unfinished dirty or uncertain state exists, the correct interim state is RECOVERY_REQUIRED until takeover inspection establishes safe ownership.
+
 ## Protocol gaps identified
 
-The incident exposed six gaps:
+The incident exposed seven gaps:
 
 1. PPGP v0.1.x assumes one primary ACTIVE_GOAL and does not explicitly coordinate several simultaneous workstreams.
 2. Lifecycle phase does not express whether a workstream is currently runnable.
@@ -130,19 +146,21 @@ The incident exposed six gaps:
 4. Writable checkout ownership is implicit.
 5. Temporary agent execution ownership and takeover are implicit.
 6. The durability of unfinished dirty work is not visible.
+7. Executor availability can be mistaken for workstream availability.
 
 ## v0.2.0 design consequences
 
 RFC 0001 proposes:
 
+- PORTFOLIO / workstream coordination;
 - WORKSTREAM;
-- WORKSTREAM_REGISTRY;
-- SCHEDULABILITY separate from lifecycle PHASE;
-- scoped WAIT_CONDITION;
+- RUN_STATE separate from lifecycle PHASE;
+- scoped typed wait conditions;
 - EXECUTION_LEASE;
 - CHECKOUT_CLAIM;
 - RECOVERY_REQUIRED takeover;
-- explicit unfinished-work durability levels.
+- explicit unfinished-work durability levels;
+- executor unavailability treated as a runtime-capacity condition rather than an automatic GOAL blocker.
 
 ## Generalized invariant
 
