@@ -1,5 +1,5 @@
 {
   "name": "ppgp",
-  "version": "0.1.2",
-  "description": "Portable continuity protocol for long-running coding agents."
+  "version": "0.2.0",
+  "description": "Portable continuity and coordination protocol for long-running coding agents."
 }

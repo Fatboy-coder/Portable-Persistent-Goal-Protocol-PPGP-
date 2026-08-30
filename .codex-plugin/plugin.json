@@ -1,7 +1,7 @@
 {
   "name": "ppgp",
-  "version": "0.1.2",
-  "description": "Portable continuity protocol for long-running coding agents.",
+  "version": "0.2.0",
+  "description": "Portable continuity and coordination protocol for long-running coding agents.",
   "author": {
     "name": "Hervey (Fatboy-coder)",
     "url": "https://github.com/Fatboy-coder"
@@ -13,6 +13,7 @@
     "coding-agents",
     "agent-memory",
     "agent-continuity",
+    "agent-coordination",
     "agent-skills",
     "persistent-goals",
     "software-engineering"
@@ -20,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "PPGP",
-    "shortDescription": "Persistent goal continuity for long-running coding-agent work",
-    "longDescription": "Use PPGP to preserve verified goal state, frozen decisions, blockers, evidence, and the next executable action across long sessions, context compaction, and agent handoffs.",
+    "shortDescription": "Persistent goal continuity and coordination for coding agents",
+    "longDescription": "Use PPGP to preserve verified goal state and coordinate optional concurrent workstreams, scoped waits, leases, checkout ownership, recovery evidence, and the next executable action across long sessions, context compaction, and agent handoffs.",
     "developerName": "Hervey (Fatboy-coder)",
     "category": "Developer Tools",
     "capabilities": [
@@ -31,7 +32,7 @@
     ],
     "defaultPrompt": [
       "Initialize PPGP for this repository.",
-      "Recover the current PPGP goal state and continue from the next executable action."
+      "Recover the current PPGP state and continue from the next safe executable action."
     ],
     "websiteURL": "https://github.com/Fatboy-coder/ppgp",
     "screenshots": []
