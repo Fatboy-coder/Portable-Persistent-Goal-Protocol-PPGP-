@@ -20,6 +20,12 @@ blocked action != blocked workstream
 blocked workstream != project blocked
 ```
 
+Add the evidence-consistency rule:
+
+```text
+narrative/UI state MUST NOT silently supersede observed canonical state
+```
+
 ## 2. Logical memory-role delta
 
 Keep existing roles:
@@ -67,6 +73,17 @@ Ownership declaration for a mutable checkout/worktree/isolated repository worksp
 
 Writable claims SHOULD be exclusive unless the repository provides an explicit safe concurrent-editing mechanism.
 
+When recovery risk matters, implementations SHOULD distinguish observed workspace dimensions rather than collapsing everything into one dirty bit:
+
+```text
+tracked      = CLEAN | DIRTY | UNKNOWN
+untracked    = NONE | PRESENT | UNKNOWN
+ownership    = SELF | FOREIGN | MIXED | UNKNOWN
+sensitivity  = NORMAL | SENSITIVE | UNKNOWN
+```
+
+This observation profile is non-mandatory storage. Its purpose is to prevent `tracked clean` from being misread as `no local state`.
+
 ### WAIT_CONDITION
 
 Typed and scoped condition preventing a specific action or larger unit from proceeding.
@@ -83,6 +100,8 @@ HOST_DURABLE
 REPO_DURABLE
 REMOTE_DURABLE
 ```
+
+Durability applies to a specific recovery artifact. An older REMOTE_DURABLE checkpoint MUST NOT cause newer HOST_DURABLE edits to be described as REMOTE_DURABLE.
 
 ## 3. ACTIVE_GOAL delta
 
@@ -127,6 +146,17 @@ Extend RETRIEVE in concurrent contexts to include relevant portfolio, lease, che
 
 Extend VERIFY before mutation to validate real workspace state when checkout ownership is relevant.
 
+Extend VERIFY beyond green tests when a human-readable claim matters. The durable target is semantic agreement among:
+
+```text
+claim
+mechanism
+verification evidence
+canonical state
+```
+
+If the claim overreaches the mechanism or evidence, narrow the claim or improve the mechanism before closure.
+
 Extend DELTA to update coordination state only when a material coordination fact changes.
 
 Do not turn Git commits into high-frequency lease heartbeats.
@@ -144,6 +174,7 @@ which executor last/currently owns execution
 which checkout belongs to which workstream
 which waits are scoped locally versus globally
 how durable unfinished work is
+whether tracked/untracked local state or foreign/sensitive artifacts affect safe mutation
 ```
 
 If the prior executor disappeared and dirty/uncertain mutable state may exist, RUN_STATE SHOULD become or be treated as RECOVERY_REQUIRED until inspected.
@@ -152,11 +183,15 @@ If the prior executor disappeared and dirty/uncertain mutable state may exist, R
 
 Keep the existing evidence hierarchy.
 
-Add this rule:
+Add these rules:
 
 Recorded checkout/dirty/lease state is last-known coordination evidence, not permission to ignore current observed repository state.
 
-Observed branch, HEAD, worktree, and dirty state take precedence over stale coordination metadata.
+Observed branch, HEAD, tracked state, untracked state and worktree state take precedence over stale coordination metadata.
+
+Session/UI labels such as `uncommitted changes`, progress counters or remembered branch state are observations, not canonical truth. Reconcile them against the VCS/workspace before mutation.
+
+Narrative state MUST NOT silently supersede a conflicting canonical source. If the canonical source is stale, update it explicitly and preserve the evidence for that change.
 
 ## 8. Blocker-classification delta
 
@@ -224,7 +259,8 @@ Before mutating a checkout in concurrent/ambiguous conditions, inspect as availa
 ```text
 current branch
 HEAD
-dirty state
+tracked state
+untracked local state
 existing worktrees/checkouts
 checkout claim
 execution lease
@@ -242,6 +278,10 @@ overwrite
 repurpose the checkout
 ```
 
+If foreign or sensitive untracked state exists, broad staging commands SHOULD be avoided when they could capture it. Prefer explicit pathspec staging and inspect the staged-file set before commit.
+
+Foreign work, secrets, private keys, generated bundles and unrelated workstream artifacts MUST NOT be staged merely because they share a checkout.
+
 Prefer safe isolation when available.
 
 ## 13. New takeover requirements
@@ -251,15 +291,29 @@ For RECOVERY_REQUIRED work:
 ```text
 read coordination + goal state
 -> inspect real workspace
--> preserve dirty state
--> compare with last checkpoint
--> classify durability/uncertainty
+-> preserve mutable state exactly as found
+-> compare with last durable checkpoint
+-> classify tracked/untracked state, ownership, sensitivity, durability and uncertainty
+-> reconstruct interrupted intent from canonical state + observed diff, not recollection alone
 -> verify proportionately
 -> record takeover/new lease
 -> resume smallest verified next action
+-> promote durability only after the corresponding checkpoint exists and is verified
 ```
 
 Destructive workspace normalization MUST NOT be used merely to simplify takeover.
+
+A useful durability promotion is:
+
+```text
+HOST_DURABLE dirty work
+-> verified local checkpoint
+-> REPO_DURABLE
+-> verified remote checkpoint/artifact
+-> REMOTE_DURABLE
+```
+
+An older REMOTE_DURABLE checkpoint does not automatically upgrade newer local edits.
 
 ## 14. New project scheduling rule
 
@@ -318,77 +372,13 @@ snapshot stores
 orchestrators
 ```
 
-No one mechanism is required for PPGP conformance.
+## 18. Conformance delta from observed recovery
 
-## 18. Reference mapping delta
+Add evaluation scenarios for:
 
-Retain existing common mapping.
+- disagreement between session/UI `uncommitted` labels and actual VCS state;
+- tracked-clean workspaces that still contain foreign or sensitive untracked local state;
+- recovery where an old pushed checkpoint is REMOTE_DURABLE while newer interrupted edits are only HOST_DURABLE;
+- semantic consistency among human-readable claims, mechanisms, verification evidence and canonical state.
 
-Add an optional example only:
-
-```text
-PORTFOLIO -> docs/PPGP_PORTFOLIO.md or equivalent
-```
-
-Do not make that filename normative.
-
-## 19. Conformance-test delta
-
-Retain the v0.1.2 abrupt recovery test.
-
-Add at least these cases:
-
-### C1 Foreign dirty checkout
-
-Replacement/parallel work preserves foreign dirty state and uses safe isolation where available.
-
-### C2 Partial external wait
-
-Action-scoped external wait does not stop independent local work.
-
-### C3 Abrupt executor loss
-
-Dirty identified work survives executor disappearance and is recovered non-destructively.
-
-### C4 Independent workstream
-
-One authority/external-blocked workstream does not stop another RUNNABLE workstream.
-
-### C5 Mixed waits
-
-Multiple wait kinds remain visible without being collapsed into a lossy scalar state.
-
-## 20. Skill implementation delta
-
-Keep `skills/ppgp/SKILL.md` compact.
-
-Add one trigger instruction telling the agent to load:
-
-```text
-references/COORDINATION.md
-```
-
-only when concurrency, ownership ambiguity, partial blocking, or takeover appears.
-
-This preserves progressive disclosure and avoids charging single-workstream users the token cost of coordination rules.
-
-## 21. CLI implementation delta
-
-Keep current commands backward compatible.
-
-Prototype the smallest useful additions before freezing syntax:
-
-```text
-ppgp status --all
-ppgp claim
-ppgp release
-ppgp recover
-```
-
-Do not release these commands until persistence semantics and tests are stable.
-
-## 22. Versioning delta
-
-The change is intentionally `0.2.0`, not `0.1.3`, because it adds new protocol primitives and conformance behavior while the project is still in the experimental `0.x` line.
-
-Update package, specification, Agent Skill metadata, adapters, mirrors, citation metadata, docs, release assets, and version-consistency fixtures atomically at release time.
+These scenarios were added after a real multi-workstream interruption was recovered without destructive normalization or human reconstruction of the interrupted diff.
