@@ -2,6 +2,8 @@
 
 PPGP keeps one canonical protocol skill at `skills/ppgp/` and adds only thin distribution adapters around it.
 
+PPGP v0.2.0 remains experimental regardless of distribution surface.
+
 Status vocabulary:
 
 - **VERIFIED CLIENT**: install/discovery/invocation has been manually verified in the real client.
@@ -14,10 +16,10 @@ Status vocabulary:
 
 | Platform | Native mechanism | PPGP artifact | Status | Remaining external action |
 | --- | --- | --- | --- | --- |
-| Anthropic Claude / Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/marketplace.json`, `plugins/ppgp/` | VERIFIED CLIENT | Tested Claude client invokes `/ppgp`; Claude Code may expose `/ppgp:ppgp`; use `/reload-plugins` only where that command exists and activation requires it |
+| Anthropic Claude / Claude Code | Plugin + self-hosted marketplace | `.claude-plugin/marketplace.json`, `plugins/ppgp/` | VERIFIED CLIENT | Tested Claude client invokes `/ppgp`; Claude Code may expose `/ppgp:ppgp`; public Anthropic listing is not claimed |
 | OpenAI Codex | Plugin + repo marketplace | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `skills/ppgp/` | STRUCTURALLY READY | Import/test in Codex; public Plugin Directory listing is external |
 | OpenAI ChatGPT | Agent Skills / skill-only plugins | `skills/ppgp/` and Codex/OpenAI plugin package | IMPORT READY | Upload/import the skill or submit the plugin for public directory availability |
-| Google Gemini CLI | Gemini Extension + Agent Skills | `gemini-extension.json`, `skills/ppgp/` | STRUCTURALLY READY | Run `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
+| Google Gemini CLI | Gemini Extension + Agent Skills | `gemini-extension.json`, `skills/ppgp/` | STRUCTURALLY READY | Run the documented Gemini extension install and smoke-test |
 | Cursor | Agent Plugins + Agent Skills | `plugin.json`, `skills/ppgp/` | STRUCTURALLY READY | Local plugin smoke test; marketplace publication is external |
 | GitHub Copilot | Agent Skills | `.agents/skills/ppgp/` generated mirror | REPOSITORY NATIVE | Open a repo with Copilot and verify discovery |
 | Windsurf | Agent Skills | `.agents/skills/ppgp/` generated mirror | REPOSITORY NATIVE | Open a repo with Windsurf and verify discovery |
@@ -25,65 +27,80 @@ Status vocabulary:
 | Kiro | Agent Skills import | canonical GitHub `skills/ppgp/` | IMPORT READY | Import the public GitHub skill in Kiro |
 | Cline | Agent Skills | canonical `skills/ppgp/` | IMPORT READY | Install/copy into a supported Cline skills directory and smoke-test |
 | JetBrains Junie | Agent Skills | canonical `skills/ppgp/` | IMPORT READY | Import/copy into Junie's skills location and smoke-test |
-| Roo Code | Agent Skills-compatible workflow when available in the installed client | canonical `skills/ppgp/` | DOCUMENTATION ONLY | Confirm the installed Roo version's official skill discovery path before adding an adapter |
-| Amazon Q Developer | No PPGP-specific stable adapter validated in this iteration | canonical protocol remains usable manually | DOCUMENTATION ONLY | Re-evaluate when a stable official Agent Skills/plugin surface is confirmed |
+| Roo Code | Agent Skills-compatible workflow when available | canonical `skills/ppgp/` | DOCUMENTATION ONLY | Confirm the installed client's official skill discovery path before adding an adapter |
+| Amazon Q Developer | No PPGP-specific stable adapter validated | canonical protocol remains usable manually | DOCUMENTATION ONLY | Re-evaluate when a stable official Agent Skills/plugin surface is confirmed |
 
-## Canonical skill and generated mirror
+## Canonical skill and generated mirrors
 
-The source of truth is always:
+The source of truth is:
 
 ```text
 skills/ppgp/SKILL.md
 skills/ppgp/references/PPGP.md
+skills/ppgp/references/COORDINATION.md
 ```
 
-For clients that natively discover the cross-agent `.agents/skills/` convention, PPGP also commits:
+`COORDINATION.md` is progressively disclosed and should only be loaded when multi-workstream ownership, checkout conflicts, scoped waits, or takeover make it relevant.
+
+For clients that discover `.agents/skills/`, PPGP also commits:
 
 ```text
 .agents/skills/ppgp/SKILL.md
 .agents/skills/ppgp/references/PPGP.md
+.agents/skills/ppgp/references/COORDINATION.md
 ```
 
-The `.agents/skills/ppgp/` tree is a generated compatibility mirror, not an independent implementation. `npm test` fails if either mirrored file drifts from the canonical source.
+The `.agents/skills/ppgp/` tree is a deterministic compatibility mirror, not an independent implementation. `npm test` fails if mirrored skill/reference content drifts from canonical source.
 
-Claude's marketplace adapter is packaged under `plugins/ppgp/` because Claude copies installed plugins into its cache. The packaged skill is also a deterministic mirror of the canonical skill and is drift-tested.
+Claude's marketplace adapter is packaged under `plugins/ppgp/` because Claude copies installed plugins into its cache. Its packaged skill and references are deterministic mirrors as well.
 
-Claude invocation is client-surface dependent. In the tested Claude client, the self-hosted marketplace installation exposes and successfully invokes:
+## Reference implementation versus protocol core
+
+PPGP v0.2.0 introduces a JSON reference portfolio and local checkout registry in the CLI, but these are not platform requirements.
+
+The portable protocol may be implemented through another representation provided equivalent semantics are preserved:
+
+- one canonical workstream state;
+- stale writes cannot silently overwrite current state when concurrent writers exist;
+- execution lease ownership is distinguishable from human authority;
+- exclusive mutable checkout ownership is protected;
+- partial waits stay correctly scoped;
+- abrupt takeover is recoverable without destructive normalization.
+
+Provider-native locks, MCP coordination, databases, CRDTs, heartbeats or orchestrators remain optional adapters.
+
+## Claude invocation note
+
+Invocation is client-surface dependent.
+
+In the previously tested Claude client, the self-hosted marketplace installation exposed:
 
 ```text
 /ppgp
 ```
 
-The same tested environment reports `/reload-plugins` as unavailable, so that command must not be presented as universally required.
-
-Claude Code can namespace plugin skills as `/plugin-name:skill-name`. Where that namespace is exposed, the PPGP plugin and skill names produce:
+Claude Code may namespace plugin skills as:
 
 ```text
 /ppgp:ppgp
 ```
 
-Do not project one invocation form across every Claude product surface. Client behavior should be recorded from direct smoke tests and documentation for the specific surface being used.
+Do not project one invocation form across every Claude surface.
 
 ## Adapter principles
 
 1. Protocol semantics remain vendor-neutral.
-2. A platform manifest may describe PPGP, but may not fork the protocol.
+2. A platform manifest may describe PPGP but may not fork protocol semantics.
 3. Prefer direct use of `skills/ppgp/` over copies.
-4. When a second path is required for discovery, keep it deterministic and drift-tested.
-5. Marketplace readiness, submission, approval, and public listing are distinct states.
+4. When a second discovery path is required, keep it deterministic and drift-tested.
+5. Marketplace readiness, submission, approval and public listing are distinct states.
 6. Do not claim a client is verified merely because a manifest exists.
-7. For repository-backed Claude marketplace installs, plugin refresh should follow repository revisions rather than a stale fixed adapter version.
-8. Document platform-native invocation names from the exact tested client surface rather than assuming one slash-command form is universal.
+7. Repository-backed adapters should follow repository revisions rather than maintaining stale semantic forks.
+8. Document platform-native invocation names from the exact tested client surface.
+9. v0.2 coordination must remain optional for simple single-workstream repositories.
 
 ## Public marketplace state
 
 Repository-side packaging does not imply vendor endorsement or public listing.
 
-Current state after this iteration:
-
-- Claude self-hosted marketplace: installation, updated-skill loading and unnamespaced `/ppgp` invocation have been manually verified in a real Claude client. That client does not expose `/reload-plugins`. Claude Code may expose the namespaced `/ppgp:ppgp` form. Public Anthropic listing is not claimed.
-- OpenAI/Codex plugin package: structurally ready, public Plugin Directory submission not claimed.
-- Cursor Agent Plugin: structurally ready, Cursor Marketplace submission not claimed.
-- Gemini extension: structurally ready, manual CLI install test required.
-
-PPGP v0.1.2 remains experimental regardless of distribution surface.
+Current evidence remains limited to the surfaces actually smoke-tested or structurally validated. A v0.2.0 package/release must be retested on real clients after publication before client-specific v0.2 verification is claimed.
