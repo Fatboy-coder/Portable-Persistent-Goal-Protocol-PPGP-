@@ -17,13 +17,20 @@ Implemented:
 - local exclusive checkout claims stored in the Git common directory rather than committed project state;
 - checkout/branch validation and collision protection;
 - safe-isolation preference when a shared checkout contains foreign dirty work;
+- richer recovery-time workspace observation distinguishing tracked state, untracked state, ownership and sensitivity when those dimensions matter;
+- explicit staging-safety guidance for foreign/sensitive untracked artifacts;
 - RECOVERY_REQUIRED and non-destructive takeover after abrupt executor unavailability;
 - unfinished-work durability classes: SESSION_ONLY, HOST_DURABLE, REPO_DURABLE, REMOTE_DURABLE;
+- durability promotion rules so an older remote checkpoint does not falsely upgrade newer host-only edits;
+- recovery guidance to reconstruct interrupted intent from canonical state plus observed diff rather than agent recollection alone;
+- evidence-consistency rule: human-readable claim, mechanism, verification evidence and canonical state must be semantically aligned before closure;
+- explicit rule that session/UI labels and narrative state do not silently supersede observed canonical repository state;
 - copy-first reversible legacy migration with one canonical source after cutover;
 - JSON reference schemas for portfolio/workstream state without making JSON a protocol-core requirement;
 - progressive-disclosure `COORDINATION.md` reference so simple repositories avoid unnecessary coordination tokens;
-- v0.2 conformance tests for stale revisions, lock cleanup, mixed waits, dependency cycles, lease generations, checkout collisions, takeover and migration rollback;
-- related-work documentation explicitly positioning PPGP alongside existing context-engineering, worktree, durable-execution and multi-agent coordination approaches.
+- v0.2 conformance tests/evaluation cases for stale revisions, lock cleanup, mixed waits, dependency cycles, lease generations, checkout collisions, takeover, migration rollback, UI/VCS disagreement, foreign untracked sensitive state, durability promotion and claim consistency;
+- related-work documentation explicitly positioning PPGP alongside existing context-engineering, worktree, durable-execution and multi-agent coordination approaches;
+- Incident 001 extended with the completed real recovery path from HOST_DURABLE interrupted work to verified REMOTE_DURABLE checkpoint.
 
 Core invariants added:
 
@@ -32,6 +39,17 @@ PORTFOLIO != WORKSTREAM != LEASE HOLDER != CHECKOUT
 executor unavailable != workstream blocked
 blocked action != blocked workstream
 blocked workstream != blocked project
+```
+
+Additional recovery invariant:
+
+```text
+OBSERVE
+-> PRESERVE
+-> RECONCILE
+-> VERIFY
+-> PROMOTE DURABILITY
+-> CONTINUE
 ```
 
 The reference CLI adds:
