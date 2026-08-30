@@ -37,7 +37,7 @@ The incident demonstrates that continuity alone is insufficient once several age
 PPGP v0.2.0 SHOULD:
 
 - allow multiple active workstreams in one project;
-- distinguish lifecycle phase from schedulability;
+- distinguish lifecycle phase from execution state;
 - prevent one wait condition from falsely blocking unrelated useful work;
 - make writable checkout/worktree ownership explicit;
 - make temporary agent execution ownership explicit and transferable;
@@ -88,10 +88,11 @@ Minimum coordination fields per workstream SHOULD include:
 ```text
 ID
 ACTIVE_GOAL_REF
-SCHEDULABILITY
+RUN_STATE
 LEASE
 CHECKOUT_CLAIM
 WAIT_CONDITIONS
+DURABILITY
 LAST_CHECKPOINT
 ```
 
@@ -127,7 +128,9 @@ A lease expresses who may continue execution. It does not grant authority beyond
 
 A lease MUST NOT justify deleting or overwriting work merely because its holder is unavailable.
 
-Implementations MAY use timeouts, but expiry alone MUST NOT authorize destructive takeover of a dirty workspace.
+Implementations MAY use timeouts, heartbeats, fencing tokens, MCP tools, or orchestrator state as optional accelerators. The portable core does not require any of them.
+
+Lease expiry alone MUST NOT authorize destructive takeover of a dirty workspace.
 
 ### 1.4 CHECKOUT_CLAIM
 
@@ -152,7 +155,7 @@ last_known_dirty_state
 host_local_locator
 ```
 
-The host-local locator MAY be an absolute path. Portable identifiers such as branch and commit remain more important for cross-host recovery.
+The host-local locator MAY be an absolute path or another host-local handle. Portable identifiers such as branch and commit remain more important for cross-host recovery.
 
 Writable claims are exclusive by default.
 
@@ -160,7 +163,7 @@ Multiple agents MAY inspect the same checkout read-only.
 
 Two workstreams MUST NOT concurrently assume exclusive write ownership of the same mutable checkout unless the repository explicitly provides a safe concurrent-editing mechanism.
 
-## 2. Two orthogonal state axes
+## 2. Orthogonal state axes
 
 PPGP v0.1.x lifecycle phase remains unchanged:
 
@@ -168,55 +171,54 @@ PPGP v0.1.x lifecycle phase remains unchanged:
 THINK -> FREEZE -> EXECUTE -> HARDEN -> SHIP -> DISTILL -> CLOSED
 ```
 
-PPGP v0.2.0 adds a separate SCHEDULABILITY axis.
-
-Recommended values:
+PPGP v0.2.0 adds a separate RUN_STATE axis:
 
 ```text
 RUNNABLE
 RUNNING
-WAITING_EXTERNAL
-WAITING_AUTHORITY
-BLOCKED_TECHNICAL
+WAITING
+RECOVERY_REQUIRED
 PARKED
 COMPLETED
 ```
 
-Lifecycle answers:
+Lifecycle PHASE answers:
 
 > What kind of work is this workstream doing?
 
-Schedulability answers:
+RUN_STATE answers:
 
-> Can useful execution proceed now?
+> Can useful execution proceed now, and does somebody currently own execution?
+
+WAIT_CONDITIONS answer:
+
+> What specific conditions prevent particular actions from proceeding?
 
 These concepts MUST NOT be collapsed into one field.
 
 ### RUNNABLE
 
-At least one safe useful action can execute now and no active execution lease is currently performing it.
+At least one safe useful action can execute now and no current execution lease is actively performing it.
 
 ### RUNNING
 
-An active lease holder is currently executing the workstream.
+A valid execution lease holder is actively executing the workstream.
 
-### WAITING_EXTERNAL
+### WAITING
 
-No remaining safe useful action can advance this workstream until a non-authority external event or dependency becomes available.
+No safe useful action can currently advance the workstream because one or more recorded wait conditions remain unsatisfied.
 
-An individual external dependency MUST NOT make the whole workstream WAITING_EXTERNAL while independent useful actions remain.
+WAITING is intentionally neutral. The typed WAIT_CONDITIONS determine whether the cause is external, authority-bound, technical, or mixed.
 
-### WAITING_AUTHORITY
+### RECOVERY_REQUIRED
 
-No remaining safe useful action can advance the workstream without a genuine authority decision, permission, credential, legal/financial commitment, or other Type C boundary.
+The previous execution holder became unavailable, ownership became ambiguous, or unfinished mutable state exists that must be inspected before normal execution resumes.
 
-### BLOCKED_TECHNICAL
-
-No currently known safe technical path can advance the workstream and the blocker is neither a known external wait nor an authority boundary.
+RECOVERY_REQUIRED is a safety state, not a failure declaration.
 
 ### PARKED
 
-The workstream is intentionally deferred despite being potentially runnable.
+The workstream is intentionally deferred despite potentially being runnable.
 
 ### COMPLETED
 
@@ -236,19 +238,23 @@ resume_condition
 independent_work_remaining=yes|no
 ```
 
+A workstream MAY contain several wait conditions of different kinds at once. This is why wait kind is not encoded directly into RUN_STATE.
+
 Default scope SHOULD be the narrowest defensible scope.
 
 An implementation MUST NOT promote an action-level wait to workstream, goal, or project scope without evidence that all useful independent work at the narrower level is exhausted.
 
-Before reporting WAITING_EXTERNAL or WAITING_AUTHORITY for an entire workstream, an agent SHOULD ask:
+Before setting an entire workstream to WAITING, an agent SHOULD ask:
 
 ```text
 Is there any safe useful work in this workstream that does not depend on the wait?
 ```
 
-If yes, the workstream remains RUNNABLE or RUNNING and the wait is recorded only for the blocked action.
+If yes, the workstream remains RUNNABLE or RUNNING and the wait is recorded only for the blocked scope.
 
 The same rule applies recursively across workstreams and goals.
+
+Authority escalation uses the wait type, not the generic WAITING state. An authority wait SHOULD be escalated only when its scope actually prevents all permitted useful progress that matters to the current scheduling decision.
 
 ## 4. Workspace safety protocol
 
@@ -287,7 +293,7 @@ Creating an isolated Git worktree to avoid disturbing foreign dirty work SHOULD 
 
 Dirty state is not itself a protocol failure.
 
-A dirty workspace becomes dangerous when its ownership, branch, or recovery state is ambiguous.
+A dirty workspace becomes dangerous when its ownership, branch, recovery state, or durability is ambiguous.
 
 A workstream with a dirty claimed workspace SHOULD record enough state for a fresh agent to answer:
 
@@ -296,9 +302,10 @@ A workstream with a dirty claimed workspace SHOULD record enough state for a fre
 - which branch and HEAD it is based on;
 - whether the dirty state is expected;
 - what was last verified;
+- how durable the unfinished work is;
 - what action should occur next.
 
-A stale recorded dirty flag is only last-known state. Recovery MUST inspect the real workspace before mutation.
+A recorded dirty flag is only last-known state. Recovery MUST inspect the real workspace before mutation.
 
 ## 6. Recovery checkpoints and durability
 
@@ -341,7 +348,44 @@ PPGP does not require every intermediate change to be REMOTE_DURABLE.
 
 The purpose of the field is to make recovery risk explicit rather than silently assuming all unfinished work has equal durability.
 
-## 7. Abrupt interruption and takeover
+## 7. Durable coordination versus live execution state
+
+PPGP MUST NOT require Git history to behave as a high-frequency lock server.
+
+Implementations SHOULD distinguish:
+
+```text
+DURABLE COORDINATION
+  workstream identity
+  ACTIVE_GOAL reference
+  scoped waits
+  last checkpoint
+  expected branch/workspace identity
+  durability class
+
+LIVE EXECUTION STATE
+  current lease holder
+  heartbeat/timeout
+  host-local path
+  runtime lock or fencing metadata
+```
+
+The exact persistence mechanism for live execution state is implementation-defined.
+
+It MAY be:
+
+- a repository-visible runtime file;
+- host-local state;
+- an MCP coordination service;
+- an orchestrator;
+- a database;
+- another safe coordination mechanism.
+
+The portable protocol MUST remain understandable without depending on one such mechanism.
+
+If live lease state is missing or stale, an agent MUST fall back to observation and recovery rules rather than assuming write permission.
+
+## 8. Abrupt interruption and takeover
 
 A cooperative handoff and an abrupt takeover are different protocol events.
 
@@ -351,21 +395,21 @@ The current lease holder:
 
 1. verifies current material state;
 2. updates ACTIVE_GOAL;
-3. updates the registry if used;
+3. updates durable coordination state if needed;
 4. records workspace state and durability;
 5. emits a compact handoff;
 6. marks the lease HANDOFF_READY or RELEASED.
 
 ### Abrupt interruption
 
-When the lease holder becomes unavailable without a clean handoff, the workstream SHOULD be treated as RECOVERY_REQUIRED if unfinished mutable state may exist.
+When the lease holder becomes unavailable without a clean handoff, the workstream SHOULD be treated as RECOVERY_REQUIRED if unfinished mutable state may exist or ownership cannot be proven current.
 
 A recovery agent MUST first inspect real repository state before assuming the last checkpoint is complete.
 
 Recommended takeover sequence:
 
 ```text
-1. read WORKSTREAM_REGISTRY and ACTIVE_GOAL
+1. read coordination state and ACTIVE_GOAL
 2. inspect claimed workspace, branch, HEAD, and dirtiness
 3. preserve foreign/uncommitted state exactly as found
 4. compare observed state with the last checkpoint
@@ -377,7 +421,7 @@ Recommended takeover sequence:
 
 A recovery agent MUST NOT use reset, clean, branch switching, or destructive workspace normalization merely to make recovery simpler.
 
-## 8. Scheduling rule
+## 9. Scheduling rule
 
 The scheduler may be a human, an agent, a CLI, or simply protocol reasoning.
 
@@ -390,9 +434,11 @@ if any workstream is RUNNABLE or RUNNING:
     project is not blocked
 ```
 
-A project is WAITING_EXTERNAL, WAITING_AUTHORITY, or BLOCKED_TECHNICAL only when no permitted active workstream can make useful progress and the aggregate reason matches that state.
+RECOVERY_REQUIRED SHOULD normally be inspected before creating duplicate replacement work.
 
-## 9. Multi-agent default remains conservative
+The project is globally waiting only when no permitted active workstream can make useful progress and the recorded waits explain the aggregate stop condition.
+
+## 10. Multi-agent default remains conservative
 
 PPGP v0.2.0 does not change the v0.1.x rule that one agent is preferred when additional agents do not provide enough independent value.
 
@@ -402,7 +448,7 @@ The presence of WORKSTREAM_REGISTRY, leases, or checkout claims does not imply t
 
 These primitives also improve sequential handoffs between different agents.
 
-## 10. Backward compatibility
+## 11. Backward compatibility
 
 A v0.1.2 repository with one `ACTIVE_GOAL` and one mutable checkout remains a valid minimal PPGP v0.2.0 deployment.
 
@@ -419,7 +465,7 @@ remains sufficient.
 
 When concurrency begins, the existing ACTIVE_GOAL MAY become one registered workstream without rewriting its durable content.
 
-## 11. Candidate compact registry representation
+## 12. Candidate compact registry representation
 
 The exact encoding is non-normative.
 
@@ -428,26 +474,34 @@ Example:
 ```text
 PPGP/0.2
 WS goal-e
-  state=RUNNING
+  run=RUNNING
   goal=docs/ACTIVE_GOAL.goal-e.md
-  lease=claude/session-a:ACTIVE
+  lease=agent-a/session-a:ACTIVE
   checkout=shared:write
-  branch=claude/goal-e
+  branch=agent-a/goal-e
   durability=HOST_DURABLE
 
 WS d1
-  state=RUNNABLE
+  run=RUNNING
   goal=docs/ACTIVE_GOAL.d1.md
-  lease=codex/session-b:ACTIVE
+  lease=agent-b/session-b:ACTIVE
   checkout=worktree-d1:write
-  branch=codex/d1
-  wait[erith]=external/action
+  branch=agent-b/d1
+  wait[remote]=external/action
   durability=HOST_DURABLE
+```
+
+If Agent B becomes unavailable unexpectedly:
+
+```text
+WS d1
+  run=RECOVERY_REQUIRED
+  lease=agent-b/session-b:RECOVERY_REQUIRED
 ```
 
 This representation intentionally separates cross-workstream coordination from detailed goal state.
 
-## 12. Candidate operation changes
+## 13. Candidate operation changes
 
 Existing operations remain:
 
@@ -469,9 +523,9 @@ ppgp recover
 ppgp status --all
 ```
 
-Exact CLI syntax is an implementation detail until the command contract is tested.
+Exact CLI syntax and persistence of live leases are implementation details until the command contract is tested.
 
-## 13. v0.2.0 conformance scenarios
+## 14. v0.2.0 conformance scenarios
 
 ### Scenario A: foreign dirty shared checkout
 
@@ -497,7 +551,7 @@ Given:
 
 Expected:
 
-- the remote action is WAITING_EXTERNAL;
+- the remote action has an EXTERNAL action-scoped wait;
 - the workstream remains RUNNABLE or RUNNING;
 - local work continues;
 - the project is not reported globally blocked.
@@ -521,7 +575,7 @@ Expected:
 
 Given:
 
-- one workstream is WAITING_AUTHORITY;
+- one workstream is WAITING because of an AUTHORITY wait;
 - another workstream is RUNNABLE.
 
 Expected:
@@ -530,7 +584,20 @@ Expected:
 - the agent may continue the independent workstream;
 - only the authority-dependent scope is escalated.
 
-## 14. Design test
+### Scenario E: mixed waits
+
+Given:
+
+- one workstream has both an EXTERNAL action wait and an AUTHORITY action wait;
+- no independent useful actions remain.
+
+Expected:
+
+- RUN_STATE is WAITING;
+- both typed waits remain visible;
+- the protocol does not invent a lossy scalar state such as WAITING_EXTERNAL that hides the authority dependency.
+
+## 15. Design test
 
 The v0.2.0 coordination layer succeeds when a fresh agent can answer, without prior conversation:
 
