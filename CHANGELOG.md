@@ -1,26 +1,51 @@
 # Changelog
 
-## Unreleased - 0.2.0 design line
+## Unreleased - 0.2.0 release candidate
 
-Drafted from observed multi-agent coordination failures in real long-running coding work.
+Major experimental coordination update derived from observed failures in real multi-agent coding work.
 
-Proposed additions:
+Implemented:
 
-- project-level PORTFOLIO / workstream coordination for concurrent active work;
-- WORKSTREAM as an independently schedulable execution unit;
-- RUN_STATE separated from the existing lifecycle PHASE;
-- scoped typed wait conditions so a blocked action does not falsely block independent work;
-- EXECUTION_LEASE semantics for temporary agent ownership;
-- CHECKOUT_CLAIM semantics for exclusive writable workspace ownership;
-- default safe-isolation behavior when a shared checkout contains foreign dirty work;
-- RECOVERY_REQUIRED and non-destructive takeover after abrupt agent unavailability;
-- explicit durability classification for unfinished work: SESSION_ONLY, HOST_DURABLE, REPO_DURABLE, REMOTE_DURABLE;
-- project-level scheduling invariant: blocked workstream != blocked project;
-- backward compatibility with v0.1.2 single-ACTIVE_GOAL repositories.
+- optional PORTFOLIO / WORKSTREAM coordination while preserving the v0.1.x single-ACTIVE_GOAL path;
+- lifecycle PHASE separated from neutral RUN_STATE;
+- RUNNABLE, RUNNING, WAITING, RECOVERY_REQUIRED, PARKED and COMPLETED states;
+- typed and scoped wait conditions so blocked actions do not falsely block independent work;
+- explicit action-scoped AUTHORITY_GATE lifecycle: REQUIRED, GRANTED, CONSUMED, REVOKED;
+- explicit acyclic workstream dependencies;
+- execution leases with monotonically increasing generations for handoff/takeover fencing;
+- reference integer revisions plus local compare-and-swap/mutation locking;
+- local exclusive checkout claims stored in the Git common directory rather than committed project state;
+- checkout/branch validation and collision protection;
+- safe-isolation preference when a shared checkout contains foreign dirty work;
+- RECOVERY_REQUIRED and non-destructive takeover after abrupt executor unavailability;
+- unfinished-work durability classes: SESSION_ONLY, HOST_DURABLE, REPO_DURABLE, REMOTE_DURABLE;
+- copy-first reversible legacy migration with one canonical source after cutover;
+- JSON reference schemas for portfolio/workstream state without making JSON a protocol-core requirement;
+- progressive-disclosure `COORDINATION.md` reference so simple repositories avoid unnecessary coordination tokens;
+- v0.2 conformance tests for stale revisions, lock cleanup, mixed waits, dependency cycles, lease generations, checkout collisions, takeover and migration rollback;
+- related-work documentation explicitly positioning PPGP alongside existing context-engineering, worktree, durable-execution and multi-agent coordination approaches.
 
-Design evidence and rationale are recorded in RFC 0001 and Incident 001.
+Core invariants added:
 
-This section is not a release announcement. v0.2.0 remains unreleased until the specification, Agent Skill, CLI, conformance cases, adapters, package metadata, and version-consistency tests are updated and verified together.
+```text
+PORTFOLIO != WORKSTREAM != LEASE HOLDER != CHECKOUT
+executor unavailable != workstream blocked
+blocked action != blocked workstream
+blocked workstream != blocked project
+```
+
+The reference CLI adds:
+
+```text
+ppgp migrate
+ppgp status --all
+ppgp workstream start/status/park/resume/handoff/recover/close
+ppgp checkout status/claim/release
+```
+
+This section is not yet a public release announcement. The v0.2.0 tag, GitHub Release, npm package and GitHub Package remain gated on repository-wide version alignment, Linux/Windows CI, package dry-run, adapter/mirror parity and final release review.
+
+No superiority or universality benchmark claim is made.
 
 ## 0.1.2 - 2026-08-26
 
