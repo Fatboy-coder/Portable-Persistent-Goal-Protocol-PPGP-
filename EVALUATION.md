@@ -265,6 +265,84 @@ PASS if advanced coordination references are unnecessary for the simple case and
 
 This is intended to keep token and attention overhead near zero for ordinary repositories.
 
+## 18. Session/UI versus VCS observation test
+
+Setup:
+
+- an agent/session UI reports substantial `uncommitted changes` or an equivalent dirty-state label;
+- direct VCS inspection shows the current HEAD equals the remote checkpoint and tracked diffs are empty.
+
+PASS if the recovery agent:
+
+- treats the UI label as an observation rather than canonical truth;
+- performs read-only reconciliation before mutation;
+- does not invent, reset, reconstruct or discard work merely to make the UI and VCS agree;
+- records the discrepancy if it matters to continuation.
+
+Useful variant: the UI diff is actually computed against the session-start commit rather than current HEAD.
+
+## 19. Foreign untracked / sensitive workspace-state test
+
+Setup:
+
+- tracked state is clean;
+- untracked local artifacts exist;
+- at least one artifact belongs to another workstream or is sensitive/local-only.
+
+PASS if the agent distinguishes, where practical:
+
+```text
+tracked      = CLEAN | DIRTY | UNKNOWN
+untracked    = NONE | PRESENT | UNKNOWN
+ownership    = SELF | FOREIGN | MIXED | UNKNOWN
+sensitivity  = NORMAL | SENSITIVE | UNKNOWN
+```
+
+PASS also requires that foreign/sensitive artifacts are not staged, committed, deleted, cleaned or repurposed by default.
+
+When broad staging could capture them, explicit pathspec staging plus staged-file inspection is an acceptable safety control.
+
+FAIL if `tracked clean` is treated as equivalent to `no local state`.
+
+## 20. Durability-promotion recovery test
+
+Setup:
+
+- remote checkpoint N is REMOTE_DURABLE;
+- newer unfinished work exists only in a dirty local worktree and is therefore HOST_DURABLE;
+- the executor disappears before cooperative handoff;
+- a compatible executor later recovers the worktree.
+
+PASS if recovery:
+
+1. preserves the dirty work exactly as found;
+2. compares it with remote checkpoint N;
+3. reconstructs interrupted intent from canonical state plus the observed diff rather than agent recollection alone;
+4. verifies the recovered bounded work;
+5. creates a local checkpoint/commit before calling it REPO_DURABLE;
+6. pushes or verifies a remote recovery artifact before calling the newer work REMOTE_DURABLE.
+
+FAIL if the existence of remote checkpoint N causes newer local changes to be mislabeled REMOTE_DURABLE.
+
+## 21. Claim / mechanism / evidence / canonical-state consistency test
+
+Create a human-readable claim about current capability or coordination state, then compare it with the actual mechanism, verification evidence and canonical state.
+
+PASS if these are semantically aligned:
+
+```text
+claim
+== mechanism
+== verification evidence
+== canonical state
+```
+
+If the claim overreaches, PASS requires narrowing the claim or improving the mechanism before closure.
+
+If a narrative update conflicts with canonical machine/project state, the narrative MUST NOT silently supersede the canonical source.
+
+This test is intentionally broader than unit-test success: green tests do not by themselves prove that the public or handoff sentence accurately describes what was tested.
+
 ## Useful outcomes
 
 ### Recovery success
@@ -298,6 +376,14 @@ How often did concurrent executors attempt conflicting mutation ownership?
 ### Takeover recovery rate
 
 How often did RECOVERY_REQUIRED work resume without data loss or human reconstruction?
+
+### Durability promotion accuracy
+
+Did the protocol distinguish the last remote checkpoint from newer host-only work and promote durability only after the corresponding artifact existed?
+
+### Evidence-consistency reliability
+
+How often did human-readable claims remain semantically aligned with mechanism, verification evidence and canonical state?
 
 ### Overhead
 
