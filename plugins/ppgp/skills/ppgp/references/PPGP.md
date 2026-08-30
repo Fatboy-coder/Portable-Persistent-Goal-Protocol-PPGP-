@@ -1,8 +1,10 @@
-# PPGP v0.1.2 Compact Reference
+# PPGP v0.2.0 Compact Reference
 
 ## Objective
 
-Enable a fresh coding agent to recover and continue a substantial goal from repository-visible state without human reconstruction of the prior conversation.
+Enable a fresh coding agent to recover and continue substantial software work from repository-visible state without human reconstruction of prior conversation history.
+
+When concurrent or ambiguous work exists, also preserve enough coordination state to determine what work is safe and useful to execute next.
 
 ## Lifecycle
 
@@ -16,7 +18,7 @@ THINK -> FREEZE -> EXECUTE -> HARDEN -> SHIP -> DISTILL -> CLOSED
 RETRIEVE -> ACT -> VERIFY -> DELTA
 ```
 
-## Logical memory
+## Core logical memory
 
 ```text
 CONSTITUTION  durable authority and invariants
@@ -26,11 +28,19 @@ ACTIVE_GOAL   temporary hot state for one active goal
 GIT           forensic history
 ```
 
-Reuse existing equivalent files.
+Single-workstream repositories may stop here.
 
 Do not create duplicate documentation.
 
-ACTIVE_GOAL is temporary and must be deleted after verified closure and distillation.
+## Optional coordination
+
+Load `COORDINATION.md` only when concurrency, ownership ambiguity, partial blocking, multiple workstreams/checkouts, or abrupt takeover appears.
+
+Core invariant:
+
+```text
+PORTFOLIO != WORKSTREAM != LEASE HOLDER != CHECKOUT
+```
 
 ## ACTIVE_GOAL minimum state
 
@@ -65,13 +75,23 @@ GOAL_CONTRACT
 
 If strategy is frozen, resume execution unless new evidence invalidates it.
 
+In concurrent mode additionally identify runnable workstreams, lease ownership, checkout ownership, scoped waits, dependencies and unfinished-work durability.
+
 ## Blockers
 
 ```text
 A agent-solvable        -> solve
-B external asynchronous -> record, usually continue
-C authority boundary    -> escalate minimally
-D hard dependency       -> escalate if no safe autonomous path
+B external asynchronous -> record; continue independent work
+C authority boundary    -> escalate smallest required action
+D hard dependency       -> escalate only when no safe path exists
+```
+
+Always prefer the narrowest true scope.
+
+```text
+blocked action != blocked workstream
+blocked workstream != blocked project
+executor unavailable != workstream blocked
 ```
 
 ## Evidence
@@ -81,22 +101,24 @@ Default technical precedence:
 ```text
 runtime/production
 > automated verification
-> current implementation
+> current repository/workspace
 > Git
-> ACTIVE_GOAL
+> canonical PPGP state
 > MEMORY
 > ROADMAP
 > conversation
 > recollection
 ```
 
+Current observed checkout state beats stale coordination metadata.
+
 ## Handoff
 
 Prefer deltas and compact structured state over transcript replay.
 
-Keep the handoff human-auditable and cross-model readable.
+Single-workstream handoffs may use the v0.1 compact form.
 
-Do not require gibberish, hidden-state communication, embeddings, MCP or a particular vendor.
+Concurrent handoffs should include workstream, phase, run state, lease generation, scoped waits, durability, evidence and next action.
 
 ## Distill
 
@@ -109,17 +131,21 @@ temporary detail    -> discard
 
 Git keeps chronology.
 
+Release transient leases and obsolete checkout claims at closure.
+
 ## Human interruption
 
 Default to autonomous resolution of reversible technical work.
 
-Escalate only for genuine authority, permission, legal/financial, destructive, or unavailable-dependency boundaries.
+Authority must be action-scoped. An agent cannot self-grant product, legal, financial, credential or production authority.
+
+Continue unrelated safe RUNNABLE work before escalating a blocked workstream when permitted.
 
 ## Multi-agent
 
 Single agent by default.
 
-Add agents only when expected independent information gain exceeds coordination cost.
+Add agents only when independent information gain or genuinely parallel useful work exceeds coordination cost.
 
 ## Closure
 
@@ -128,6 +154,6 @@ DoD verified
 + evidence
 + distillation
 + roadmap/high-level state updated when needed
-+ ACTIVE_GOAL deleted
++ temporary hot/coordination state garbage-collected
 = CLOSED
 ```
