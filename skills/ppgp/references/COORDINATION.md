@@ -71,7 +71,7 @@ Typed wait conditions explain why.
 Record the smallest true scope.
 
 ```text
-kind = EXTERNAL | AUTHORITY | TECHNICAL | CAPACITY
+kind = EXTERNAL | AUTHORITY | TECHNICAL
 scope = ACTION | WORKSTREAM | GOAL | PROJECT
 resume_condition = observable condition
 independent_work_remaining = yes | no
@@ -85,7 +85,7 @@ Can any safe useful work continue without this dependency?
 
 If yes, keep the workstream RUNNABLE/RUNNING and scope the wait more narrowly.
 
-Provider quota/cooldown is normally CAPACITY, not a GOAL blocker.
+Provider quota, cooldown, process loss, or terminal loss is executor availability. It is handled through lease/recovery semantics rather than inventing a new GOAL blocker type.
 
 ## Execution lease
 
