@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Fatboy-coder/ppgp/schemas/workstream.schema.json",
+  "title": "PPGP Reference Workstream State",
+  "description": "Reference JSON representation for PPGP v0.2 workstream machine state. Human-readable WHY, DoD, frozen decisions and invariants belong in notes.md or an equivalent logical role.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "revision",
+    "phase",
+    "runState",
+    "branch",
+    "lease",
+    "dependencies",
+    "waitConditions",
+    "authorityGates",
+    "nextAction",
+    "evidenceRefs",
+    "durability",
+    "notesRef"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "phase": {
+      "enum": ["THINK", "FREEZE", "EXECUTE", "HARDEN", "SHIP", "DISTILL", "CLOSED"]
+    },
+    "runState": {
+      "enum": ["RUNNABLE", "RUNNING", "WAITING", "RECOVERY_REQUIRED", "PARKED", "COMPLETED"]
+    },
+    "branch": { "type": ["string", "null"] },
+    "lease": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["holder", "status", "generation", "claimedAt", "expiresAt"],
+      "properties": {
+        "holder": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["CLAIMED", "HANDOFF_READY", "RECOVERY_REQUIRED", "RELEASED"] },
+        "generation": { "type": "integer", "minimum": 1 },
+        "claimedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["workstream", "condition"],
+        "properties": {
+          "workstream": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+          "condition": { "const": "COMPLETED" }
+        }
+      }
+    },
+    "waitConditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "scope", "dependency", "resumeCondition"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["EXTERNAL", "AUTHORITY", "TECHNICAL"] },
+          "scope": { "enum": ["ACTION", "WORKSTREAM", "GOAL", "PROJECT"] },
+          "dependency": { "type": "string", "minLength": 1 },
+          "resumeCondition": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "authorityGates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "action", "state"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 },
+          "state": { "enum": ["REQUIRED", "GRANTED", "CONSUMED", "REVOKED"] }
+        }
+      }
+    },
+    "nextAction": { "type": ["string", "null"] },
+    "evidenceRefs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "durability": {
+      "enum": ["SESSION_ONLY", "HOST_DURABLE", "REPO_DURABLE", "REMOTE_DURABLE"]
+    },
+    "notesRef": { "type": "string", "minLength": 1 }
+  }
+}
