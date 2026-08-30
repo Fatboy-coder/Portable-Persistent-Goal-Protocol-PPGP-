@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased - 0.2.0 design line
+
+Drafted from observed multi-agent coordination failures in real long-running coding work.
+
+Proposed additions:
+
+- project-level PORTFOLIO / workstream coordination for concurrent active work;
+- WORKSTREAM as an independently schedulable execution unit;
+- RUN_STATE separated from the existing lifecycle PHASE;
+- scoped typed wait conditions so a blocked action does not falsely block independent work;
+- EXECUTION_LEASE semantics for temporary agent ownership;
+- CHECKOUT_CLAIM semantics for exclusive writable workspace ownership;
+- default safe-isolation behavior when a shared checkout contains foreign dirty work;
+- RECOVERY_REQUIRED and non-destructive takeover after abrupt agent unavailability;
+- explicit durability classification for unfinished work: SESSION_ONLY, HOST_DURABLE, REPO_DURABLE, REMOTE_DURABLE;
+- project-level scheduling invariant: blocked workstream != blocked project;
+- backward compatibility with v0.1.2 single-ACTIVE_GOAL repositories.
+
+Design evidence and rationale are recorded in RFC 0001 and Incident 001.
+
+This section is not a release announcement. v0.2.0 remains unreleased until the specification, Agent Skill, CLI, conformance cases, adapters, package metadata, and version-consistency tests are updated and verified together.
+
 ## 0.1.2 - 2026-08-26
 
 Version-consistency and release-hardening patch.
