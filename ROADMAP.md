@@ -1,12 +1,60 @@
 # PPGP Roadmap
 
-PPGP is currently experimental. The roadmap prioritizes evidence, portability and reduction of unnecessary protocol overhead.
+PPGP is experimental. The roadmap prioritizes evidence, portability and reduction of unnecessary protocol overhead.
+
+## v0.2.0
+
+Release candidate implementation line.
+
+v0.2.0 extends PPGP from continuity of one primary active goal to optional portfolio coordination when several workstreams, executors, branches, worktrees, dependencies, or partial waits coexist.
+
+Implemented in the release-candidate branch:
+
+- optional PORTFOLIO / WORKSTREAM coordination;
+- lifecycle PHASE separated from RUN_STATE;
+- RUNNABLE, RUNNING, WAITING, RECOVERY_REQUIRED, PARKED and COMPLETED states;
+- typed/scoped wait conditions;
+- action-scoped authority gates;
+- explicit acyclic workstream dependencies;
+- execution leases with monotonically increasing generations;
+- local exclusive checkout claims stored outside committed project state;
+- stale revision rejection plus local mutation locking;
+- safe isolation preference around foreign dirty work;
+- non-destructive abrupt takeover;
+- SESSION_ONLY / HOST_DURABLE / REPO_DURABLE / REMOTE_DURABLE recovery classes;
+- copy-first reversible legacy migration with one canonical source after cutover;
+- progressive-disclosure coordination reference;
+- reference portfolio/workstream JSON Schemas;
+- backward compatibility for single ACTIVE_GOAL repositories;
+- v0.2 coordination conformance tests.
+
+Design lineage:
+
+- [`rfcs/0001-concurrent-workstreams-leases-partial-blocking.md`](./rfcs/0001-concurrent-workstreams-leases-partial-blocking.md)
+- [`rfcs/0001-normative-delta.md`](./rfcs/0001-normative-delta.md)
+- [`evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md`](./evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md)
+- [`RELATED_WORK.md`](./RELATED_WORK.md)
+
+### Remaining release gates
+
+Before public v0.2.0 publication:
+
+1. complete repository-wide version alignment;
+2. pass Linux and Windows `npm test` including installed-package smoke tests;
+3. pass package dry-run and verify schemas/coordination reference are shipped;
+4. audit adapters and mirror parity;
+5. independently review the v0.2 conformance semantics;
+6. confirm release notes and citation metadata;
+7. create immutable GitHub Release/tag only after all above are green;
+8. publish npm/GitHub Packages through the guarded release pipeline.
+
+The GitHub/npm publication step remains separate because it is less reversible than repository implementation work.
 
 ## v0.1.2
 
-Published as the current experimental line and available for public testing.
+Published experimental predecessor.
 
-Current capabilities:
+v0.1.2 provides:
 
 - portable repository-visible goal state;
 - THINK, FREEZE, EXECUTE, HARDEN, SHIP, DISTILL lifecycle;
@@ -15,57 +63,13 @@ Current capabilities:
 - explicit human-authority boundaries;
 - compact handoff format;
 - Agent Skills-compatible implementation;
-- downloadable skill package;
-- public specification, citation metadata and evaluation guide;
-- explicit ACTIVE_GOAL hot-state recovery semantics;
-- reproducible paired benchmark infrastructure.
+- ACTIVE_GOAL hot-state recovery semantics;
+- reproducible paired benchmark infrastructure;
+- version-consistency hardening.
 
-## v0.2.0 development line
+v0.2.0 intentionally preserves this single-workstream path when no explicit portfolio is needed.
 
-v0.2.0 is being designed from observed coordination failures in real long-running multi-agent coding work.
-
-The release should extend continuity from one active goal to safe recovery and scheduling when several workstreams, agents, branches, worktrees, partial wait conditions, and temporary executor interruptions coexist.
-
-Primary design RFC:
-
-- [`rfcs/0001-concurrent-workstreams-leases-partial-blocking.md`](./rfcs/0001-concurrent-workstreams-leases-partial-blocking.md)
-
-Generalized design evidence:
-
-- [`evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md`](./evidence/incidents/INCIDENT-001-concurrent-checkout-partial-wait.md)
-
-Target protocol additions:
-
-- optional project-level PORTFOLIO / workstream coordination when concurrent active work exists;
-- WORKSTREAM as an independently schedulable unit;
-- lifecycle PHASE separated from RUN_STATE;
-- compact RUN_STATE values: RUNNABLE, RUNNING, WAITING, RECOVERY_REQUIRED, PARKED, COMPLETED;
-- scoped typed wait conditions so one unavailable dependency does not falsely block independent work;
-- temporary EXECUTION_LEASE ownership;
-- exclusive writable CHECKOUT_CLAIM semantics;
-- isolated-workspace preference when a shared checkout contains foreign dirty work;
-- explicit non-destructive takeover after abrupt agent unavailability;
-- unfinished-work durability levels from SESSION_ONLY through REMOTE_DURABLE;
-- executor unavailability treated as runtime capacity rather than an automatic GOAL blocker;
-- project-level invariant that a blocked workstream does not block unrelated runnable work;
-- backward compatibility for v0.1.2 single-ACTIVE_GOAL repositories.
-
-### v0.2.0 release gates
-
-Before v0.2.0 is released:
-
-1. freeze RFC 0001 semantics;
-2. update the normative specification without creating a second source of truth;
-3. extend the Agent Skill and compact reference;
-4. extend the CLI with the smallest useful coordination operations;
-5. add deterministic conformance cases for shared-checkout protection, partial external waits, abrupt takeover, mixed waits, and unrelated runnable workstreams;
-6. update all versioned adapters and mirrors atomically;
-7. pass existing v0.1.x recovery tests plus new v0.2 coordination tests;
-8. validate packaging and version consistency;
-9. keep motivating incidents generalized and free of private product details;
-10. release as experimental without a superiority or universality claim.
-
-## Evidence priorities
+## Evidence priorities after v0.2.0
 
 ### Gather independent evidence
 
@@ -73,23 +77,19 @@ Collect recovery failures, successful replications, overhead reports and compara
 
 ### Reduce protocol overhead
 
-Identify fields, steps or rules that can be removed without reducing recovery quality.
+Identify fields, steps or rules that can be removed without reducing recovery or coordination quality.
 
 ### Test portability
 
-Validate that the same repository-visible state can be interpreted consistently by materially different coding agents and environments.
+Validate that materially different coding agents interpret the same portable state consistently.
 
 ### Test concurrency semantics
 
-Test whether fresh agents can safely distinguish workstream ownership, checkout ownership, scoped blockers, executor interruptions, recoverable dirty state, and the next runnable work without human reconstruction.
+Measure checkout safety, blocker-scope reliability, takeover recovery and stale-write prevention under real multi-agent conditions.
 
 ### Clarify conformance
 
-Refine the minimum requirements for claiming PPGP compatibility using observed implementation failures rather than theoretical completeness.
-
-### Improve packaging
-
-Keep installation simple across Agent Skills-compatible clients without making the portable core dependent on one vendor.
+Refine minimum compatibility requirements using observed failures rather than theoretical completeness.
 
 ## Not planned as core requirements
 
@@ -104,7 +104,7 @@ PPGP does not plan to require:
 - CRDT-backed concurrent editing;
 - proprietary infrastructure.
 
-These may be useful optional integrations, but they should not become prerequisites for protocol conformance.
+These remain optional integrations.
 
 ## Stability
 
