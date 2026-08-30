@@ -3,7 +3,7 @@
 Date observed: 2026-08-30  
 Evidence class: Real project incident, generalized for public protocol design  
 PPGP version in use: 0.1.x lineage  
-Outcome: Recovered without destructive checkout mutation
+Outcome: Recovered without destructive checkout mutation; interrupted host-only work later promoted to verified remote durability
 
 ## Privacy note
 
@@ -124,7 +124,7 @@ The correct recovery sequence is observation before mutation:
 ```text
 read goal and portfolio state
 -> inspect workspace
--> identify branch/HEAD/dirtiness
+-> identify branch/HEAD/tracked and untracked state
 -> preserve changes
 -> compare with last checkpoint
 -> verify proportionately
@@ -136,9 +136,115 @@ If the prior lease ended cleanly and no ambiguous mutable state remains, executo
 
 If unfinished dirty or uncertain state exists, the correct interim state is RECOVERY_REQUIRED until takeover inspection establishes safe ownership.
 
+## Follow-up observation 1: UI state versus canonical VCS state
+
+When Agent A later resumed, the session UI displayed a very large `uncommitted changes` diff.
+
+A read-only recovery audit showed instead:
+
+- current HEAD equaled the pushed remote checkpoint;
+- tracked diffs were empty;
+- no interrupted merge/rebase/cherry-pick existed;
+- the large UI diff corresponded to cumulative branch changes relative to the session-start commit rather than true uncommitted work.
+
+Protocol lesson:
+
+```text
+session/UI diff label
+!=
+canonical workspace state
+```
+
+The correct response was not to reset, reconstruct, or discard anything. The agent reconciled the UI observation against Git and classified the workstream as clean at the tracked-state level.
+
+## Follow-up observation 2: tracked-clean did not mean workspace-empty
+
+The same audit found local untracked artifacts in the primary checkout, including foreign workstream material and a sensitive local-only credential artifact.
+
+Nothing had been committed or leaked, but a broad staging command could have captured the foreign local state.
+
+The repository therefore simultaneously had:
+
+```text
+current tracked state  = CLEAN
+untracked local state  = PRESENT
+ownership              = MIXED / FOREIGN
+sensitivity            = SENSITIVE
+```
+
+Protocol lesson:
+
+```text
+tracked clean
+!=
+no local state
+```
+
+When this distinction matters, recovery should observe tracked state, untracked state, ownership and sensitivity separately rather than relying on one `dirty` boolean.
+
+The active agent continued with explicit path staging and audited the staged-file set before commit. It did not clean, move, inspect destructively, or stage the foreign artifacts.
+
+## Follow-up recovery: HOST_DURABLE to REMOTE_DURABLE
+
+The interrupted Workstream B worktree was later recovered by a compatible executor.
+
+The durable state at recovery time was split:
+
+```text
+last pushed checkpoint = REMOTE_DURABLE
+newer dirty worktree   = HOST_DURABLE
+```
+
+The returning executor did not recreate the second lot from memory.
+
+It:
+
+1. performed a read-only audit of the existing worktree;
+2. confirmed local HEAD and remote HEAD matched the last pushed checkpoint;
+3. preserved the interrupted diff exactly as found;
+4. checked that the diff matched the bounded intent recorded immediately before interruption;
+5. completed only that bounded second lot;
+6. ran focused verification and one complete affected verification pass;
+7. staged only explicit allowed paths and audited the staged set;
+8. committed the recovered work as a new checkpoint;
+9. pushed it and verified local HEAD equaled remote HEAD.
+
+Only after step 8 did the new work become REPO_DURABLE.
+
+Only after step 9 did it become REMOTE_DURABLE.
+
+Protocol lesson:
+
+```text
+REMOTE_DURABLE old checkpoint
++
+HOST_DURABLE newer edits
+!=
+REMOTE_DURABLE current work
+```
+
+Durability attaches to a specific recovery artifact and must be promoted by evidence.
+
+## Follow-up observation 3: claim, mechanism, evidence and canonical state
+
+During the surrounding work, several human-readable claims were found to overreach what the mechanism actually guaranteed even though automated tests were green.
+
+The durable lesson is broader than any one implementation detail:
+
+```text
+claim
+== mechanism
+== verification evidence
+== canonical state
+```
+
+The equality is semantic, not textual.
+
+A narrative or handoff may correct stale canonical state, but it must do so explicitly. Narrative state must not silently replace the canonical source merely because it is newer prose.
+
 ## Protocol gaps identified
 
-The incident exposed seven gaps:
+The complete incident exposed ten gaps or ambiguities:
 
 1. PPGP v0.1.x assumes one primary ACTIVE_GOAL and does not explicitly coordinate several simultaneous workstreams.
 2. Lifecycle phase does not express whether a workstream is currently runnable.
@@ -147,10 +253,13 @@ The incident exposed seven gaps:
 5. Temporary agent execution ownership and takeover are implicit.
 6. The durability of unfinished dirty work is not visible.
 7. Executor availability can be mistaken for workstream availability.
+8. A single clean/dirty workspace bit can hide important tracked/untracked ownership and sensitivity distinctions.
+9. Session/UI state can be mistaken for canonical repository state.
+10. Human-readable claims can outrun the mechanism, evidence, or canonical state even when tests are green.
 
 ## v0.2.0 design consequences
 
-RFC 0001 proposes:
+RFC 0001 proposes or now incorporates:
 
 - PORTFOLIO / workstream coordination;
 - WORKSTREAM;
@@ -160,11 +269,14 @@ RFC 0001 proposes:
 - CHECKOUT_CLAIM;
 - RECOVERY_REQUIRED takeover;
 - explicit unfinished-work durability levels;
-- executor unavailability treated as a runtime-capacity condition rather than an automatic GOAL blocker.
+- executor unavailability treated as a runtime-capacity condition rather than an automatic GOAL blocker;
+- richer workspace observation when recovery risk matters: tracked state, untracked state, ownership and sensitivity;
+- durability promotion only after the corresponding recovery artifact exists and is verified;
+- evidence-consistency rules preventing UI/narrative claims from silently superseding canonical observed state.
 
-## Generalized invariant
+## Generalized invariants
 
-The most important lesson is:
+The most important lesson remains:
 
 ```text
 PROTECT FOREIGN WORK
@@ -172,8 +284,21 @@ AND
 CONTINUE INDEPENDENT SAFE WORK
 ```
 
+The recovery extension is:
+
+```text
+OBSERVE
+-> PRESERVE
+-> RECONCILE
+-> VERIFY
+-> PROMOTE DURABILITY
+-> CONTINUE
+```
+
 Safety without liveness causes needless idling.
 
 Liveness without ownership safety risks data loss.
 
-PPGP v0.2.0 should require both.
+Recovery without evidence risks reconstructing fiction.
+
+PPGP v0.2.0 should require all three.
