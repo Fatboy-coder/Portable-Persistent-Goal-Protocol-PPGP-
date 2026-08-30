@@ -16,7 +16,7 @@ assert(pkg.bin && pkg.bin.ppgp === 'bin/ppgp.js', 'package.json must publish the
 const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
   cwd: repo,
   encoding: 'utf8',
-  shell: process.platform === 'win32',
+  shell: process.platform === 'win32'
 });
 
 assert(packed.status === 0, `npm pack --dry-run failed:\n${packed.stdout}\n${packed.stderr}`);
@@ -34,6 +34,10 @@ const files = new Set((manifest.files || []).map((entry) => entry.path));
 for (const required of [
   'bin/ppgp.js',
   'skills/ppgp/SKILL.md',
+  'skills/ppgp/references/PPGP.md',
+  'skills/ppgp/references/COORDINATION.md',
+  'schemas/portfolio.schema.json',
+  'schemas/workstream.schema.json',
   'scripts/benchmark-report.js',
   'scripts/prepare-pilot-01.js',
   'benchmarks/result.schema.json',
@@ -42,9 +46,20 @@ for (const required of [
   'BENCHMARK_PROTOCOL.md',
   'SPEC.md',
   'EVALUATION.md',
-  'CITATION.cff',
+  'CITATION.cff'
 ]) {
   assert(files.has(required), `published npm package is missing ${required}`);
 }
 
-console.log('PPGP npm package contents and CLI bin mapping verified.');
+for (const forbidden of [
+  '.agents/skills/ppgp/SKILL.md',
+  '.codex-plugin/plugin.json',
+  '.claude-plugin/plugin.json',
+  'plugins/ppgp/skills/ppgp/SKILL.md',
+  'gemini-extension.json',
+  'plugin.json'
+]) {
+  assert(!files.has(forbidden), `repository adapter leaked into npm package: ${forbidden}`);
+}
+
+console.log('PPGP npm package contents, v0.2 schemas, coordination reference, and CLI bin mapping verified.');

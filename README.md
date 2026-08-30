@@ -1,22 +1,22 @@
 # Portable Persistent Goal Protocol (PPGP)
 
-> Portable continuity protocol for long-running coding agents.
+> Portable continuity and coordination protocol for long-running coding agents.
 
-**Status:** Experimental v0.1.2  
+**Status:** Experimental v0.2.0  
 **First public release:** 2026-08-24  
-**Current release:** 2026-08-26  
+**Target v0.2.0 release:** 2026-08-30  
 **License:** MIT  
 **Maturity:** Provisional
 
-PPGP is an open, vendor-neutral continuity protocol for long-running AI coding agents and agentic software workflows. It keeps active software goals recoverable across context compaction, interrupted sessions, agent replacement and different coding-agent products.
+PPGP is an open, vendor-neutral protocol for keeping long-running software work recoverable across context compaction, interrupted sessions, agent replacement, and concurrent coding-agent work.
 
-It does not replace model memory, Git, tests, MCP or provider-specific compaction. It defines a small control protocol around them.
+It does not replace model memory, Git, tests, MCP, worktrees, orchestration, or provider-specific compaction. It defines a small portable control layer around them.
 
-**[Try with npm](https://www.npmjs.com/package/@fatboy-coder/ppgp)** · **[Download PPGP v0.1.2](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.2.zip)** · **[Read the specification](./SPEC.md)** · **[Platform compatibility](./COMPATIBILITY.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Cite PPGP](./CITATION.cff)**
+**[Try with npm](https://www.npmjs.com/package/@fatboy-coder/ppgp)** · **[Read the specification](./SPEC.md)** · **[Platform compatibility](./COMPATIBILITY.md)** · **[Run an evaluation](./EVALUATION.md)** · **[Related work](./RELATED_WORK.md)** · **[Cite PPGP](./CITATION.cff)**
 
 ## Try PPGP in 30 seconds
 
-Inside any Git repository:
+For an ordinary single active goal:
 
 ```bash
 npx @fatboy-coder/ppgp init
@@ -24,114 +24,227 @@ npx @fatboy-coder/ppgp goal "Ship one verified milestone"
 npx @fatboy-coder/ppgp status
 ```
 
-PPGP keeps the active goal, verified state, frozen decisions, blockers and next executable action recoverable in repository-visible state so a fresh coding agent can resume with less human reconstruction.
+A v0.1-style `ACTIVE_GOAL.md` remains a valid v0.2 single-workstream deployment. No migration is required.
 
-For a quick environment check:
+For concurrent workstreams:
 
 ```bash
-npx @fatboy-coder/ppgp doctor
+npx @fatboy-coder/ppgp workstream start d1 "Run D1 capacity work"
+npx @fatboy-coder/ppgp workstream start goal-e "Continue Goal E"
+npx @fatboy-coder/ppgp status --all
 ```
 
-## What PPGP keeps recoverable
-
-A coding agent should be able to recover the minimum operational state needed to continue useful work:
-
-- the current goal;
-- frozen decisions;
-- verified state;
-- remaining work;
-- real blockers;
-- durable lessons;
-- the next executable action.
-
-## Start here
-
-| Goal | Resource |
-| --- | --- |
-| Try the public npm CLI | `npx @fatboy-coder/ppgp init` |
-| Download the installable skill | [`ppgp-v0.1.2.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.2.zip) |
-| Install with Agent Skills CLI | `npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp` |
-| Install through a native agent platform | [`COMPATIBILITY.md`](./COMPATIBILITY.md) |
-| Understand the protocol | [`SPEC.md`](./SPEC.md) |
-| Run an evaluation | [`EVALUATION.md`](./EVALUATION.md) |
-| Review distribution channels | [`DISTRIBUTION.md`](./DISTRIBUTION.md) |
-| Report a recovery failure | [Open an issue](../../issues/new/choose) |
-| Contribute | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
-| Cite PPGP | [`CITATION.cff`](./CITATION.cff) |
-| Review release history | [`CHANGELOG.md`](./CHANGELOG.md) |
-
-## Why
-
-Long-running coding agents commonly lose efficiency when they must repeatedly reconstruct operational context after context compaction, interrupted sessions, handoffs or agent replacement.
-
-PPGP externalizes only the minimum useful state and treats conversation history as disposable cache.
-
-## Core model
+The reference CLI then uses an explicit portfolio:
 
 ```text
-GOAL
-  |
-  v
+.ppgp/
+├── portfolio.json
+└── workstreams/
+    └── <id>/
+        ├── state.json
+        └── notes.md
+```
+
+JSON is the reference implementation format, not a protocol-core requirement.
+
+## What changed in v0.2.0
+
+PPGP v0.1.x focused on recoverability of one primary active goal.
+
+v0.2.0 adds an optional coordination layer for real repositories where several agents, workstreams, branches, worktrees, blockers, or executor interruptions coexist.
+
+The central model is:
+
+```text
+PROJECT
+│
+├── CONSTITUTION
+├── ROADMAP
+├── MEMORY
+│
+└── PORTFOLIO                 optional
+    ├── WORKSTREAM A
+    │   ├── PHASE
+    │   ├── RUN_STATE
+    │   ├── REVISION
+    │   ├── EXECUTION_LEASE
+    │   ├── DEPENDENCIES
+    │   ├── WAIT_CONDITIONS
+    │   ├── AUTHORITY_GATES
+    │   └── DURABILITY
+    └── WORKSTREAM B ...
+```
+
+Core invariant:
+
+```text
+PORTFOLIO != WORKSTREAM != LEASE HOLDER != CHECKOUT
+```
+
+And:
+
+```text
+executor unavailable != workstream blocked
+blocked action != blocked workstream
+blocked workstream != blocked project
+```
+
+## Goal lifecycle remains stable
+
+```text
 THINK -> FREEZE -> EXECUTE -> HARDEN -> SHIP -> DISTILL -> CLOSED
-                     ^                    |
-                     |                    v
-              RETRIEVE -> ACT -> VERIFY -> DELTA
 ```
 
-Logical memory layers:
+Inside each phase:
 
 ```text
-CONSTITUTION   long-lived authority and constraints
-ROADMAP        project direction and goal scheduling
-MEMORY         durable decisions, invariants and lessons
-ACTIVE_GOAL    temporary working memory for one goal
-GIT            forensic history and implementation evidence
+RETRIEVE -> ACT -> VERIFY -> DELTA
 ```
 
-`ACTIVE_GOAL` is temporary. At goal closure, durable information is distilled into persistent memory and the temporary goal state is deleted.
+v0.2 adds a separate workstream execution axis:
 
-## Design principles
-
-- Retrieve relevant memory instead of preloading the whole history.
-- Prefer current verified state over chronological diaries.
-- Communicate deltas instead of repeating full summaries.
-- Treat tests and production evidence as stronger than agent confidence.
-- Keep human escalation for genuine authority boundaries.
-- Use additional agents only when expected information gain exceeds coordination cost.
-- Keep the protocol readable by humans and portable between model vendors.
-- Do not require vector databases, embeddings, MCP, a specific model or a specific IDE.
-
-## Install
-
-PPGP v0.1.2 ships as an [Agent Skills](https://agentskills.io/) compatible skill, as a dependency-free Node.js CLI published on npm, and through thin native distribution adapters for major coding-agent ecosystems.
-
-### Universal Agent Skills route
-
-```bash
-npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
+```text
+RUNNABLE
+RUNNING
+WAITING
+RECOVERY_REQUIRED
+PARKED
+COMPLETED
 ```
 
-`skills/ppgp/` is the canonical PPGP Agent Skill source.
+PHASE and RUN_STATE are deliberately independent.
 
-### Native platform routes
+For example:
 
-| Platform | Route |
-| --- | --- |
-| Claude Code | Plugins → Add marketplace → `Fatboy-coder/ppgp` → install `ppgp` |
-| OpenAI Codex | `.codex-plugin/plugin.json` + repo marketplace metadata |
-| ChatGPT | Agent Skill / skill-only OpenAI plugin; public directory listing requires external publication |
-| Gemini CLI | `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
-| Cursor | root Agent Plugin `plugin.json` + canonical `skills/` |
-| GitHub Copilot | repository-native `.agents/skills/ppgp/` discovery |
-| Windsurf | repository-native `.agents/skills/ppgp/` discovery |
-| Devin | repository-native `.agents/skills/ppgp/` discovery |
-| Kiro / Cline / Junie | import the canonical public Agent Skill |
+```text
+EXECUTE + RUNNING
+SHIP + WAITING
+HARDEN + RECOVERY_REQUIRED
+```
 
-See [`COMPATIBILITY.md`](./COMPATIBILITY.md) for verification level, limitations and remaining marketplace actions. Repository readiness is not presented as vendor approval or public listing.
+## Typed and scoped waits
 
-### PPGP CLI
+PPGP does not collapse every blocker into one project-wide stop.
 
-The canonical public npm package is `@fatboy-coder/ppgp`:
+A wait records:
+
+```text
+kind  = EXTERNAL | AUTHORITY | TECHNICAL
+scope = ACTION | WORKSTREAM | GOAL | PROJECT
+```
+
+A workstream may contain several wait kinds at once.
+
+If one remote action is waiting for credentials while local implementation remains safe and useful, the action waits but the workstream remains runnable.
+
+## Execution leases
+
+A lease coordinates who currently owns mutation of a workstream.
+
+The reference model includes a monotonically increasing `generation` so an older executor can detect that a takeover occurred.
+
+```text
+Agent A generation 4
+        ↓ interruption
+Agent B takeover
+        ↓
+generation 5
+```
+
+A lease does not grant product, legal, financial, credential, or production authority.
+
+## Checkout safety
+
+Writable checkouts are exclusive by default.
+
+The reference CLI stores checkout claims locally in the Git common directory, so they are shared across linked worktrees but are not committed as project memory.
+
+A useful coordination rule is:
+
+```text
+valid lease
++ checkout claimed by same workstream
++ actual branch matches declared branch
+= coordination layer permits mutation
+```
+
+Foreign dirty work must not be reset, cleaned, stashed, committed, overwritten, or repurposed merely to make another agent's job easier.
+
+When safe and reversible, use an isolated workspace such as a Git worktree.
+
+## Recovery durability
+
+Unfinished work may have different recovery guarantees:
+
+```text
+SESSION_ONLY
+HOST_DURABLE
+REPO_DURABLE
+REMOTE_DURABLE
+```
+
+A dirty identified worktree may be perfectly recoverable after an agent cooldown while still being only `HOST_DURABLE` and therefore vulnerable to loss of the machine.
+
+## Dependencies
+
+Scheduling dependencies are explicit and acyclic.
+
+```text
+workstream=goal-e
+requires=d1
+condition=COMPLETED
+```
+
+PPGP does not infer dependency from branch names, checkout location, executor identity, document order, or conversation order.
+
+## Authority gates
+
+Authority is action-scoped:
+
+```text
+REQUIRED
+GRANTED
+CONSUMED
+REVOKED
+```
+
+An agent cannot grant itself authority.
+
+A grant for one action is not blanket permission for unrelated actions.
+
+Credentials and secrets are not PPGP state.
+
+## Revision / compare-and-swap
+
+The reference machine state carries integer revisions.
+
+A stale revision is rejected rather than silently overwriting newer canonical state.
+
+The local CLI also uses a short-lived mutation lock. Multi-machine implementations may use a database, MCP coordinator, lock service, fencing tokens, or another atomic/CAS mechanism.
+
+None is required by the portable core.
+
+## Progressive disclosure
+
+Simple repositories should not pay the token cost of multi-agent coordination.
+
+The canonical skill loads [`references/COORDINATION.md`](./skills/ppgp/references/COORDINATION.md) only when concurrency, checkout ownership, partial blocking, or takeover actually appears.
+
+For a normal single goal, the v0.1 mental model remains enough:
+
+```text
+CONSTITUTION
+ROADMAP
+MEMORY
+ACTIVE_GOAL
+GIT
+```
+
+## Reference CLI
+
+The public npm package is `@fatboy-coder/ppgp`.
+
+### Legacy / single-workstream
 
 ```bash
 npx @fatboy-coder/ppgp init
@@ -141,115 +254,150 @@ npx @fatboy-coder/ppgp status
 npx @fatboy-coder/ppgp handoff
 ```
 
-For repeated use, install it globally and keep the short `ppgp` executable:
+### Portfolio / workstreams
 
 ```bash
-npm install -g @fatboy-coder/ppgp
-ppgp init
+ppgp status --all
+
+ppgp workstream start <id> <title>
+ppgp workstream status <id>
+ppgp workstream park <id>
+ppgp workstream resume <id>
+ppgp workstream handoff <id> <new-holder>
+ppgp workstream recover <id> <new-holder>
+ppgp workstream close <id>
 ```
 
-The CLI is deliberately deterministic. It helps inspect, scaffold and recover repository-visible state without pretending to replace agent reasoning, verification, distillation or closure checks.
+### Local checkout claims
 
-### Manual install
+```bash
+ppgp checkout status
+ppgp checkout claim <workstream-id> [checkout-path]
+ppgp checkout release [checkout-path]
+```
 
-Download the current release archive from [`ppgp-v0.1.2.zip`](https://github.com/Fatboy-coder/ppgp/releases/latest/download/ppgp-v0.1.2.zip), extract it, then copy or upload the `ppgp` skill directory into a client that implements the Agent Skills standard.
+### Optional migration
 
-The repository also keeps the canonical source under [`skills/ppgp/`](./skills/ppgp/) for inspection and development.
+```bash
+ppgp migrate
+ppgp migrate --rollback
+```
 
-For clients that natively discover `.agents/skills/`, PPGP commits a generated compatibility mirror at `.agents/skills/ppgp/`. Automated tests enforce byte-for-byte parity with the canonical skill.
+Migration is copy-first. After cutover, `.ppgp/` becomes canonical and the old `ACTIVE_GOAL.md` remains untouched only as a compatibility snapshot. The reference implementation does not maintain two independently writable canonical truths.
 
-### Read without installing
+Rollback is accepted while the legacy source remains unchanged.
 
-Read [`SPEC.md`](./SPEC.md) for the protocol itself.
+## Design principles
 
-The skill contains a compact operational reference in [`skills/ppgp/references/PPGP.md`](./skills/ppgp/references/PPGP.md).
+- Retrieve relevant memory instead of preloading project history.
+- Prefer verified current state over chronological diaries.
+- Communicate deltas instead of replaying transcripts.
+- Separate machine coordination truth from human-readable reasoning.
+- Reject stale writes instead of silently overwriting newer state.
+- Protect foreign unfinished work while continuing independent safe work.
+- Keep waits scoped to the smallest true unit.
+- Keep authority tied to exact actions.
+- Treat tests and runtime evidence as stronger than agent confidence.
+- Use one agent by default; add agents only when their value exceeds coordination cost.
+- Keep the core portable across model vendors and IDEs.
+- Do not require MCP, embeddings, vector databases, CRDTs, a hosted service, or a specific provider.
 
-## Operations
+## Install
 
-The Agent Skill exposes six workflow intents:
+PPGP v0.2.0 ships as an [Agent Skills](https://agentskills.io/) compatible skill, a dependency-free Node.js CLI, and thin native distribution adapters.
+
+### Universal Agent Skills route
+
+```bash
+npx skills add https://github.com/Fatboy-coder/ppgp/tree/main/skills/ppgp
+```
+
+`skills/ppgp/` is canonical. `.agents/skills/ppgp/` and the packaged Claude skill are generated compatibility mirrors whose parity is test-enforced.
+
+### Native platform routes
+
+| Platform | Route |
+| --- | --- |
+| Claude Code | Plugins → Add marketplace → `Fatboy-coder/ppgp` → install `ppgp` |
+| OpenAI Codex | `.codex-plugin/plugin.json` + repository marketplace metadata |
+| ChatGPT | Agent Skill / skill-only OpenAI plugin; public directory listing requires external publication |
+| Gemini CLI | `gemini extensions install https://github.com/Fatboy-coder/ppgp --auto-update` |
+| Cursor | root Agent Plugin `plugin.json` + canonical `skills/` |
+| GitHub Copilot | repository-native `.agents/skills/ppgp/` discovery |
+| Windsurf | repository-native `.agents/skills/ppgp/` discovery |
+| Devin | repository-native `.agents/skills/ppgp/` discovery |
+| Kiro / Cline / Junie | import the canonical public Agent Skill |
+
+See [`COMPATIBILITY.md`](./COMPATIBILITY.md) for verification level and limitations. Repository readiness is not presented as vendor approval.
+
+### Manual release archive
+
+After the v0.2.0 release is published, the versioned archive is expected at:
 
 ```text
-ppgp init
-ppgp goal
-ppgp status
-ppgp handoff
-ppgp distill
-ppgp close
+ppgp-v0.2.0.zip
 ```
 
-The CLI currently implements deterministic helpers for `init`, `doctor`, `goal`, `status`, `handoff`, `skill-path`, and `install-skill`.
-
-These are protocol operations, not assumptions about a vendor-specific slash-command system.
+Until that release action occurs, use the repository skill or npm's currently published stable package.
 
 ## Distribution
 
-PPGP uses multiple distribution surfaces on purpose:
+PPGP intentionally separates the portable protocol from distribution adapters:
 
 ```text
-Canonical Agent Skill      -> vendor-neutral source of truth
-Claude Plugin/Marketplace  -> native Claude discovery
-OpenAI Plugin              -> Codex / OpenAI plugin packaging
+Canonical Agent Skill      -> vendor-neutral source
+Claude Plugin/Marketplace  -> Claude discovery
+OpenAI Plugin              -> Codex / OpenAI packaging
 Gemini Extension           -> Gemini CLI installation
-Agent Plugin               -> Cursor and compatible clients
-.agents/skills mirror      -> Copilot / Windsurf / Devin discovery
-GitHub Release             -> direct download
-npmjs.com                  -> public CLI discovery and zero-install execution
+Agent Plugin               -> Cursor-compatible packaging
+.agents/skills mirror      -> repository-native discovery
+GitHub Release             -> versioned direct download
+npmjs.com                  -> CLI discovery and zero-install execution
 GitHub Packages            -> package presence inside GitHub
 ```
 
-The canonical npm package name is `@fatboy-coder/ppgp`.
-
-Platform adapters do not fork PPGP semantics. Current release metadata is kept on the same semantic version across the specification, CLI package, citation metadata and versioned adapters.
-
-See [`DISTRIBUTION.md`](./DISTRIBUTION.md) for package names, manifests, version mapping and publication security.
+See [`DISTRIBUTION.md`](./DISTRIBUTION.md).
 
 ## Research and evaluation
 
 PPGP is experimental.
 
-Independent evaluation, replication, criticism, alternative implementations and failure reports are welcome.
-
-If you evaluate PPGP in research, production or comparative agent testing, identify the exact PPGP version used and publish enough methodology for the result to be independently interpreted.
-
-The reproducible evaluation guide is in [`EVALUATION.md`](./EVALUATION.md). The repository also provides structured issue forms for recovery failures and evaluation reports.
+Independent evaluation, criticism, alternative implementations, failure reports, and simpler competing approaches are welcome.
 
 Especially useful evidence includes:
 
-- whether a fresh agent can recover an active goal without human reconstruction;
-- recovery failures and ambiguous state;
-- documentation overhead created by the protocol;
-- unnecessary human escalations;
-- stale or contradictory memory;
-- cross-agent or cross-provider incompatibilities;
-- smaller representations that preserve recovery quality;
-- measured results from small, large, legacy or multi-agent repositories.
+- whether a fresh agent can recover without human reconstruction;
+- whether workstream blocker scope is classified correctly;
+- whether foreign dirty work is protected;
+- whether abrupt executor takeover preserves useful work;
+- whether stale revisions are rejected;
+- whether coordination overhead is justified;
+- whether the same state is interpretable across different agents/providers.
+
+The reproducible evaluation guide is [`EVALUATION.md`](./EVALUATION.md).
+
+The design lineage and neighboring work are documented in [`RELATED_WORK.md`](./RELATED_WORK.md).
 
 Negative results are useful. PPGP should change when reproducible evidence shows that a simpler or more reliable rule exists.
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+## What v0.2.0 deliberately does not claim
 
-## Citation
-
-Citation metadata is provided in [`CITATION.cff`](./CITATION.cff).
-
-Version-specific citation is strongly preferred. The public GitHub handle is used as the author identifier until real-name citation metadata is added.
-
-## What v0.1.2 deliberately does not claim
-
-PPGP v0.1.2 does **not** claim to:
+PPGP v0.2.0 does **not** claim to:
 
 - invent persistent agent memory;
-- outperform existing memory systems;
+- invent worktrees, leases, durable execution, or multi-agent coordination;
+- outperform existing memory or orchestration systems;
 - be optimal for every repository;
 - reduce tokens by a specific percentage;
 - eliminate human review;
-- make multi-agent systems inherently better.
+- make multi-agent systems inherently better;
+- provide a distributed lock service.
 
-The purpose of the public v0.1.2 release is to make the protocol inspectable, reproducible and falsifiable.
+The protocol is published to be inspectable, reproducible, falsifiable, and improvable.
 
 ## Project mission
 
-PPGP is a community-oriented open-source project intended to help developers and users get more reliable work from coding agents with less repeated explanation and avoidable supervision.
+PPGP is a community-oriented open-source project intended to help developers and users get more reliable work from coding agents with less repeated explanation, avoidable supervision, and preventable coordination loss.
 
 The project may be used commercially under the MIT license. The community-oriented mission is not a restriction on who may use the protocol.
 
@@ -257,11 +405,13 @@ The project may be used commercially under the MIT license. The community-orient
 
 PPGP v0.1 was first published publicly on 2026-08-24 in the `Fatboy-coder/fatboy-coder` repository under `/ppgp`.
 
-The current release is PPGP v0.1.2. This repository is now the canonical home of the protocol. The original Git history remains the first public record of the initial v0.1 release.
+The dedicated `Fatboy-coder/ppgp` repository is now the canonical home.
+
+v0.2.0 is the first protocol line to add optional multi-workstream portfolio coordination while retaining the v0.1 single-goal path.
 
 ## Versioning
 
-PPGP uses semantic versions for the current protocol and its versioned distribution artifacts.
+PPGP uses semantic versions for the protocol and versioned distribution artifacts.
 
 `0.x` releases are experimental and may change incompatibly.
 

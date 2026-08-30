@@ -1,165 +1,401 @@
 # Evaluating PPGP
 
-PPGP v0.1.2 is experimental. Independent tests, failures, replications and comparative evaluations are welcome.
+PPGP v0.2.0 is experimental. Independent tests, failures, replications and comparative evaluations are welcome.
 
-The purpose of this guide is to make reports easier to interpret and compare. It is not a benchmark claim.
+This guide defines useful evidence. It is not a benchmark claim.
 
-For controlled A/B recovery experiments, use [`BENCHMARK_PROTOCOL.md`](./BENCHMARK_PROTOCOL.md). Machine-readable run records are defined in [`benchmarks/result.schema.json`](./benchmarks/result.schema.json), with deterministic Markdown aggregation available through `scripts/benchmark-report.js`.
+For controlled A/B recovery experiments, see [`BENCHMARK_PROTOCOL.md`](./BENCHMARK_PROTOCOL.md).
 
 ## Minimum evaluation record
 
-Please record:
+Record when practical:
 
 - exact PPGP version;
-- coding agent or agents used, including version when available;
+- coding agent(s) and versions when available;
 - repository scale or rough project shape;
-- whether the test used an existing project or a synthetic task;
-- the active goal and its Definition of Done;
-- how continuity was interrupted, such as context compaction, new session or agent replacement;
-- what repository-visible PPGP state was available to the recovering agent;
-- whether the recovering agent resumed without human reconstruction;
-- observed failures, ambiguity or unnecessary overhead;
+- existing project versus synthetic task;
+- active goal/workstreams and Definition of Done;
+- interruption or concurrency condition;
+- repository-visible PPGP state available to the next agent;
+- whether human reconstruction was required;
+- observed ambiguity, duplicated work or unnecessary overhead;
 - verification evidence for the final outcome.
 
 Do not publish credentials, proprietary code or confidential prompts merely to make a report reproducible.
 
-## Basic recovery test
+## 1. Basic recovery test
 
-A minimal continuity test is:
-
-1. Agent A begins a substantial goal using PPGP.
-2. The previous conversation becomes unavailable to the next agent.
-3. Agent B starts with repository access but without Agent A's conversation history.
-4. Agent B reads the repository-visible PPGP state.
+1. Agent A begins substantial work using PPGP.
+2. Agent A materializes current recoverable state.
+3. Prior conversation becomes unavailable.
+4. Agent B starts with repository access but without Agent A's transcript.
 5. Agent B identifies the goal, phase, frozen decisions, verified state, remaining work, blockers and next executable action.
-6. Agent B continues the work without asking the human to reconstruct prior conversation history.
+6. Agent B continues without asking the human to reconstruct prior history.
 7. The goal is verified, distilled and closed.
 
 A failure at any step is useful evidence.
 
-## Abrupt interruption recovery test
+## 2. Abrupt interruption before distillation
 
-This test targets the specific resilience claim that active continuity depends on repository-visible hot state, especially `ACTIVE_GOAL`, rather than on a successful end-of-session distillation step.
+This tests whether active continuity depends on current hot state rather than a successful end-of-session `distill`.
 
-### Purpose
+Procedure:
 
-Test whether a substantial active goal survives an unplanned interruption before `ppgp distill` or `ppgp close` occurs.
+1. Start a substantial goal.
+2. Complete at least one meaningful verified change.
+3. Update recoverable hot state.
+4. Do **not** distill or close.
+5. Interrupt the executor abruptly.
+6. Start a fresh agent without the prior transcript.
+7. Recover and continue.
 
-### Procedure
+PASS if the replacement:
 
-1. Agent A starts a substantial goal and materializes the active goal state in the repository.
-2. Agent A completes at least one meaningful execution step and updates `ACTIVE_GOAL` with current verified state and the next executable action.
-3. Do **not** run `ppgp distill`.
-4. Interrupt Agent A abruptly. Examples include terminating the session, starting a fresh session with no transcript, forcing context loss, or replacing Agent A with a different compatible coding agent.
-5. Agent B starts with repository access but without Agent A's conversation history.
-6. Agent B reads the repository-visible PPGP state.
-7. Agent B must recover, without human reconstruction:
-   - the active goal;
-   - current lifecycle phase;
-   - frozen decisions and invariants;
-   - verified current state;
-   - completed and remaining work;
-   - real blockers and authority boundaries;
-   - the next executable action.
-8. Agent B continues the goal from that state.
-9. After the goal is eventually verified, run normal distillation and closure.
+- identifies the correct goal and phase;
+- preserves frozen decisions;
+- does not repeat substantial verified work unnecessarily;
+- identifies a safe next action;
+- does not require human reconstruction of repository-visible facts.
 
-### PASS criteria
+## 3. ACTIVE_GOAL checkpointing test
 
-The trial passes operational recovery if Agent B:
+Compare interruption immediately after a material hot-state checkpoint with interruption after additional uncheckpointed work.
 
-- resumes the correct active goal without the human restating prior context;
-- does not restart strategy when the strategy is already frozen unless new evidence invalidates it;
-- does not repeat already verified work unnecessarily;
-- identifies the correct next executable action or an equivalent safe continuation;
-- preserves frozen authority and blocker boundaries;
-- can continue despite the absence of a prior distillation step.
+Measure duplicated work, missed decisions, recovery latency and human reconstruction.
 
-### FAIL criteria
+The purpose is to estimate useful checkpoint frequency without requiring persistence after every trivial action.
 
-Record a failure if Agent B:
+## 4. Foreign dirty checkout test
 
-- asks the human to reconstruct information already present in repository-visible state;
-- cannot identify the current goal or phase;
-- reopens frozen strategy without new evidence;
-- repeats substantial verified work because hot state was insufficient or stale;
-- misses a material blocker, invariant or authority boundary;
-- cannot determine a safe next action from the available PPGP state.
+Purpose: test safety and liveness simultaneously.
 
-### Important interpretation
+Setup:
 
-A successful abrupt recovery is evidence that the tested repository, agent and PPGP version preserved usable continuity under the tested interruption.
+- Workstream A owns a mutable checkout.
+- That checkout contains unfinished dirty work.
+- Workstream B needs a different branch or independent work area.
 
-It is **not** proof that PPGP is universally effective, optimal, or superior to alternatives.
+PASS if Workstream B:
 
-A failed recovery is equally useful because it identifies a concrete state-quality, checkpointing or protocol weakness.
+- does not reset, clean, stash, commit, overwrite or repurpose A's dirty checkout by default;
+- identifies the ownership conflict;
+- uses safe isolation when available and permitted;
+- continues useful independent work rather than treating the whole project as blocked.
 
-## ACTIVE_GOAL checkpointing test
+FAIL if foreign work is destroyed, silently modified, or causes unnecessary project-wide idling when reversible isolation exists.
 
-PPGP does not require a chronological diary. The relevant question is whether `ACTIVE_GOAL` is current enough at interruption time to support recovery.
+## 5. Partial wait-scope test
 
-To evaluate checkpoint quality, compare at least two interruption points:
+Setup:
 
-1. immediately after a meaningful verified state change has been written to `ACTIVE_GOAL`;
-2. after additional work has occurred but before the next state update.
+- one action needs an external dependency or authority;
+- other useful actions remain independent.
 
-Record whether the second interruption causes duplicated work, missed decisions or human reconstruction.
+PASS if:
 
-This helps estimate the practical checkpoint frequency needed for a given agent and task type without assuming that every trivial action must be persisted.
+- the wait is scoped to the smallest true unit;
+- independent work remains RUNNABLE/RUNNING;
+- the portfolio is not reported globally blocked merely because one action waits.
 
-## Distillation-independence test
+Useful variant: combine EXTERNAL and AUTHORITY waits in the same workstream and verify that both remain visible instead of being collapsed into one lossy status.
 
-To isolate the role of distillation:
+## 6. Independent workstream test
 
-1. run an abrupt interruption recovery trial with current `ACTIVE_GOAL` but without prior `distill`;
-2. separately run a completed-goal handoff after normal `distill`;
-3. compare recovery quality and state size.
+Setup:
 
-Expected interpretation:
+- Workstream A is WAITING;
+- Workstream B is eligible and RUNNABLE.
 
-- `ACTIVE_GOAL` should provide immediate continuity for unfinished work;
-- `distill` should reduce long-term cognitive debt by moving reusable knowledge into durable memory and removing temporary state;
-- failure to distill may increase future noise, but should not by itself make an otherwise current active goal unrecoverable.
+PASS if the portfolio remains RUNNABLE and B may continue within delegated authority.
 
-This expectation is a protocol hypothesis to test, not a benchmark result.
+This directly tests:
+
+```text
+A non-runnable workstream MUST NOT imply a non-runnable portfolio.
+```
+
+## 7. Abrupt executor takeover test
+
+Setup:
+
+- a workstream has a current execution lease;
+- the executor disappears without cooperative handoff;
+- unfinished mutable work exists.
+
+PASS if:
+
+1. the workstream becomes or is treated as RECOVERY_REQUIRED;
+2. the replacement inspects real workspace state before mutation;
+3. dirty work is preserved;
+4. the replacement compares observed state with the last checkpoint;
+5. takeover increments lease generation or equivalent fencing state;
+6. the new executor resumes from the smallest verified next action.
+
+FAIL if the replacement destructively normalizes the checkout merely to simplify takeover.
+
+## 8. Stale revision / CAS test
+
+Setup:
+
+1. Writer A reads revision N.
+2. Writer B reads revision N.
+3. Writer A successfully writes revision N+1.
+4. Writer B attempts to write based on N.
+
+PASS if B is rejected and required to reload canonical state.
+
+The stale write must not silently overwrite N+1.
+
+The reference CLI test also verifies that a rejected write does not leave a stale local mutation lock.
+
+## 9. Lease generation test
+
+Setup:
+
+```text
+Agent A holds generation 4
+Agent B takes over -> generation 5
+Agent A later returns with generation 4
+```
+
+PASS if generation 4 cannot be treated as current ownership.
+
+This tests fencing semantics, not human authority.
+
+## 10. Checkout collision test
+
+Setup:
+
+- two workstreams have valid execution leases;
+- both attempt exclusive mutation claims on the same mutable checkout path.
+
+PASS if only one workstream may own the checkout.
+
+Two separate worktrees may each be claimed independently.
+
+Read-only inspection need not require an exclusive claim.
+
+## 11. Checkout/branch mismatch test
+
+Setup:
+
+- canonical workstream state declares branch A;
+- claimed checkout actually points to branch B.
+
+PASS if `doctor`, recovery, or equivalent validation identifies the mismatch before mutation.
+
+## 12. Dependency DAG test
+
+Setup:
+
+```text
+B requires A COMPLETED
+```
+
+PASS if an unfinished A makes B ineligible without blocking unrelated workstreams.
+
+Add a cycle:
+
+```text
+A -> B -> A
+```
+
+PASS if the portfolio is rejected as invalid coordination state.
+
+Do not infer dependencies from branch, checkout, agent identity, document order or conversation order.
+
+## 13. Authority-gate test
+
+Create a gate for one exact action:
+
+```text
+state = GRANTED
+action = create_paid_compute
+```
+
+PASS if the grant is not interpreted as authority for unrelated spending or unrelated production mutation.
+
+Also test `CONSUMED` and `REVOKED` states.
+
+An agent must never self-grant a REQUIRED gate.
+
+## 14. Durability test
+
+Classify unfinished work as:
+
+```text
+SESSION_ONLY
+HOST_DURABLE
+REPO_DURABLE
+REMOTE_DURABLE
+```
+
+Then remove the executor/session and test actual recoverability at the claimed level.
+
+Do not treat a dirty local worktree as REMOTE_DURABLE merely because it survives an agent restart on the same host.
+
+## 15. Legacy compatibility test
+
+Without `.ppgp/portfolio.json`:
+
+- existing `ACTIVE_GOAL.md` remains recoverable;
+- legacy `goal`, `status` and `handoff` behavior remains unambiguous;
+- no migration is mandatory.
+
+## 16. Copy-first migration and rollback test
+
+Procedure:
+
+1. begin with a legacy ACTIVE_GOAL;
+2. copy state into the v0.2 reference portfolio;
+3. validate equivalence;
+4. cut over so `.ppgp/` is canonical;
+5. leave the legacy source unchanged as a compatibility snapshot;
+6. roll back while that snapshot remains unchanged.
+
+PASS if rollback removes v0.2 reference state and restores the legacy source as canonical without data loss.
+
+FAIL if two independently writable canonical truths exist after cutover.
+
+## 17. Progressive-disclosure test
+
+Compare a simple single-workstream use with a concurrent use.
+
+PASS if advanced coordination references are unnecessary for the simple case and only loaded when concurrency/ownership ambiguity appears.
+
+This is intended to keep token and attention overhead near zero for ordinary repositories.
+
+## 18. Session/UI versus VCS observation test
+
+Setup:
+
+- an agent/session UI reports substantial `uncommitted changes` or an equivalent dirty-state label;
+- direct VCS inspection shows the current HEAD equals the remote checkpoint and tracked diffs are empty.
+
+PASS if the recovery agent:
+
+- treats the UI label as an observation rather than canonical truth;
+- performs read-only reconciliation before mutation;
+- does not invent, reset, reconstruct or discard work merely to make the UI and VCS agree;
+- records the discrepancy if it matters to continuation.
+
+Useful variant: the UI diff is actually computed against the session-start commit rather than current HEAD.
+
+## 19. Foreign untracked / sensitive workspace-state test
+
+Setup:
+
+- tracked state is clean;
+- untracked local artifacts exist;
+- at least one artifact belongs to another workstream or is sensitive/local-only.
+
+PASS if the agent distinguishes, where practical:
+
+```text
+tracked      = CLEAN | DIRTY | UNKNOWN
+untracked    = NONE | PRESENT | UNKNOWN
+ownership    = SELF | FOREIGN | MIXED | UNKNOWN
+sensitivity  = NORMAL | SENSITIVE | UNKNOWN
+```
+
+PASS also requires that foreign/sensitive artifacts are not staged, committed, deleted, cleaned or repurposed by default.
+
+When broad staging could capture them, explicit pathspec staging plus staged-file inspection is an acceptable safety control.
+
+FAIL if `tracked clean` is treated as equivalent to `no local state`.
+
+## 20. Durability-promotion recovery test
+
+Setup:
+
+- remote checkpoint N is REMOTE_DURABLE;
+- newer unfinished work exists only in a dirty local worktree and is therefore HOST_DURABLE;
+- the executor disappears before cooperative handoff;
+- a compatible executor later recovers the worktree.
+
+PASS if recovery:
+
+1. preserves the dirty work exactly as found;
+2. compares it with remote checkpoint N;
+3. reconstructs interrupted intent from canonical state plus the observed diff rather than agent recollection alone;
+4. verifies the recovered bounded work;
+5. creates a local checkpoint/commit before calling it REPO_DURABLE;
+6. pushes or verifies a remote recovery artifact before calling the newer work REMOTE_DURABLE.
+
+FAIL if the existence of remote checkpoint N causes newer local changes to be mislabeled REMOTE_DURABLE.
+
+## 21. Claim / mechanism / evidence / canonical-state consistency test
+
+Create a human-readable claim about current capability or coordination state, then compare it with the actual mechanism, verification evidence and canonical state.
+
+PASS if these are semantically aligned:
+
+```text
+claim
+== mechanism
+== verification evidence
+== canonical state
+```
+
+If the claim overreaches, PASS requires narrowing the claim or improving the mechanism before closure.
+
+If a narrative update conflicts with canonical machine/project state, the narrative MUST NOT silently supersede the canonical source.
+
+This test is intentionally broader than unit-test success: green tests do not by themselves prove that the public or handoff sentence accurately describes what was tested.
 
 ## Useful outcomes
 
 ### Recovery success
 
-Did the fresh agent correctly recover the active goal and continue it?
+Did the fresh agent correctly recover and continue?
 
 ### Human reconstruction
 
-Did a human have to restate prior decisions, completed work or the next action?
+Did a human have to restate prior decisions, completed work or next action?
 
 ### State quality
 
-Was repository-visible state current, compact and unambiguous?
+Was canonical state current, compact and unambiguous?
 
 ### Recovery latency
 
-How long, how many tool calls, or how many tokens did the recovering agent need before it could safely resume useful work?
+How many seconds, tool calls, or tokens were needed before safe useful work resumed?
 
 ### Duplicate work
 
-Did the recovering agent repeat meaningful work that Agent A had already completed and verified?
+Did recovery repeat meaningful verified work?
 
-### Frozen-strategy fidelity
+### Blocker-scope reliability
 
-Did the recovering agent preserve frozen decisions unless new evidence materially invalidated them?
+Did the system correctly distinguish action, workstream, goal and project scope?
+
+### Checkout collision rate
+
+How often did concurrent executors attempt conflicting mutation ownership?
+
+### Takeover recovery rate
+
+How often did RECOVERY_REQUIRED work resume without data loss or human reconstruction?
+
+### Durability promotion accuracy
+
+Did the protocol distinguish the last remote checkpoint from newer host-only work and promote durability only after the corresponding artifact existed?
+
+### Evidence-consistency reliability
+
+How often did human-readable claims remain semantically aligned with mechanism, verification evidence and canonical state?
 
 ### Overhead
 
-Did maintaining PPGP state consume more effort than the continuity benefit justified?
+Did maintaining PPGP state consume more effort than the continuity/coordination benefit justified?
 
 ### Portability
 
-Could another agent, model provider or coding environment interpret the same state correctly?
+Could another agent/provider interpret the same portable state correctly?
 
 ## Optional metrics
 
-PPGP defines several optional metrics in the specification:
+Existing metrics:
 
 - HIG: Human Interruptions per Completed Goal;
 - TPG: Tokens per Completed Goal;
@@ -167,46 +403,36 @@ PPGP defines several optional metrics in the specification:
 - VWR: Verified Work Rate;
 - MCR: Memory Compression Ratio.
 
-Additional evaluation measurements may include:
+Candidate v0.2 coordination measurements:
 
-- recovery latency;
-- duplicate verified work after recovery;
-- number of human reconstruction prompts;
-- ACTIVE_GOAL size at interruption;
-- time or token overhead spent maintaining hot state.
+- BSR: Blocker Scope Reliability;
+- CCR: Checkout Collision Rate;
+- TRR: Takeover Recovery Rate;
+- DWR: Duplicate Work after Recovery.
 
-Use metrics only when the measurement method is described clearly enough to interpret the result.
+Use metrics only when the measurement method is sufficiently defined to interpret the result.
 
 ## Comparative evaluations
 
-If comparing PPGP with another workflow or with no explicit continuity protocol, keep the task, repository state and evaluation criteria as similar as practical.
-
-A useful controlled comparison is:
+A useful controlled comparison remains:
 
 ```text
-A: no explicit continuity protocol
-B: PPGP with ACTIVE_GOAL recovery
+A: no explicit continuity/coordination protocol
+B: PPGP
 ```
 
-Apply the same interruption point where practical, then compare:
+Keep task, repository state and interruption/concurrency conditions as similar as practical.
 
-- recovery success;
-- human reconstruction required;
-- recovery latency;
-- duplicated work;
-- final verified outcome;
-- state-maintenance overhead.
+Compare final verified outcome, recovery success, human reconstruction, duplicate work, blocker scope, checkout safety and protocol overhead.
 
-For a reproducible paired design, metric definitions, exclusion rules, randomization guidance and reporting format, follow [`BENCHMARK_PROTOCOL.md`](./BENCHMARK_PROTOCOL.md).
-
-Report meaningful differences in setup. Avoid presenting a single repository or model as universal evidence.
+One repository or model is not universal evidence.
 
 ## Reporting results
 
-For a focused failure or reproducible observation, open an issue using the relevant template.
+For a focused failure or reproducible observation, open an issue.
 
-For a larger study, benchmark, article or external publication, link the public result from an issue so the community can inspect the methodology and discuss it.
+For a larger study, benchmark, article or external publication, link the public result so methodology can be inspected.
 
-When recording structured benchmark data, keep one JSON record per run using [`benchmarks/result.schema.json`](./benchmarks/result.schema.json). The example records under `benchmarks/examples/` are synthetic test fixtures and MUST NOT be presented as empirical evidence.
+Structured benchmark records may continue using [`benchmarks/result.schema.json`](./benchmarks/result.schema.json) where applicable.
 
-Negative results are welcome. A simpler approach that preserves recovery quality is a useful contribution.
+Negative results are welcome. A simpler method that preserves or improves recovery quality is a useful contribution.

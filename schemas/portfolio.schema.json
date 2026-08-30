@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Fatboy-coder/ppgp/schemas/portfolio.schema.json",
+  "title": "PPGP Reference Portfolio",
+  "description": "Reference JSON representation for PPGP v0.2 portfolio coordination. JSON is not required by the protocol core.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "revision", "aggregationPolicy", "workstreams"],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "id": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "aggregationPolicy": { "const": "any-runnable" },
+    "workstreams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "stateRef", "notesRef"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+          "stateRef": { "type": "string", "minLength": 1 },
+          "notesRef": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
