@@ -27,6 +27,8 @@ blocked action != blocked workstream
 blocked workstream != blocked project
 ```
 
+A narrative claim, UI label, or remembered state MUST NOT silently supersede observed canonical state.
+
 ## 2. Normative language
 
 The terms MUST, MUST NOT, SHOULD, SHOULD NOT and MAY describe protocol requirements and recommendations.
@@ -135,6 +137,17 @@ Two workstreams MUST NOT simultaneously assume exclusive write ownership of the 
 
 Checkout claims SHOULD remain local/runtime coordination state rather than durable project memory unless the implementation has a specific reason to persist them.
 
+When recovery risk matters, an implementation SHOULD avoid reducing workspace state to one ambiguous `clean/dirty` bit. It SHOULD observe or classify, where practical:
+
+```text
+tracked      = CLEAN | DIRTY | UNKNOWN
+untracked    = NONE | PRESENT | UNKNOWN
+ownership    = SELF | FOREIGN | MIXED | UNKNOWN
+sensitivity  = NORMAL | SENSITIVE | UNKNOWN
+```
+
+This observation profile is not a mandatory persisted schema. Its purpose is to distinguish a truly empty workspace from cases such as tracked-clean state with foreign or sensitive untracked local artifacts.
+
 ### 3.9 WAIT_CONDITION
 
 A WAIT_CONDITION records a condition preventing a specific action or broader unit from proceeding.
@@ -208,6 +221,12 @@ REPO_DURABLE means a local version-control object or equivalent repository recov
 REMOTE_DURABLE means the recovery artifact survives loss of the current host.
 
 PPGP does not require every intermediate change to be REMOTE_DURABLE. The purpose is to make recovery risk explicit.
+
+Durability applies to a specific recovery artifact, not automatically to every newer change in the same workstream.
+
+A REMOTE_DURABLE checkpoint MAY coexist with newer HOST_DURABLE edits. The newer edits MUST NOT be described as REMOTE_DURABLE merely because the older checkpoint is remote.
+
+Durability SHOULD be promoted only after the corresponding checkpoint/artifact actually exists and is verified.
 
 ### 3.12 GIT / FORENSIC HISTORY
 
@@ -475,11 +494,14 @@ Before mutating a checkout in concurrent or ambiguous conditions, an agent SHOUL
 ```text
 current branch
 HEAD
-working-tree dirtiness
+tracked changes
+untracked local state
 known worktrees/checkouts
 checkout claim
 execution lease
 ```
+
+If recovery risk matters, tracked state and untracked local state SHOULD be distinguished. Ownership and sensitivity SHOULD also be classified when they materially change safe mutation.
 
 If a checkout contains foreign dirty work, an agent MUST NOT by default:
 
@@ -490,6 +512,10 @@ If a checkout contains foreign dirty work, an agent MUST NOT by default:
 - commit foreign changes;
 - overwrite files;
 - repurpose the checkout.
+
+If foreign or sensitive untracked state is present, broad staging commands SHOULD be avoided when they could capture that state. Explicit pathspec staging plus staged-file inspection is a preferred control.
+
+Foreign work, secrets, private keys, generated bundles and unrelated workstream artifacts MUST NOT be staged merely because they share a checkout.
 
 When reversible and allowed by project policy, the preferred response is safe isolation, such as a separate Git worktree or equivalent workspace.
 
@@ -528,13 +554,28 @@ Perform the next bounded action.
 
 Check observable evidence rather than relying on model confidence.
 
-When checkout ownership matters, observed branch/HEAD/dirtiness SHOULD be checked before mutation.
+When checkout ownership matters, observed branch/HEAD/tracked/untracked state SHOULD be checked before mutation.
+
+When a durable human-readable claim matters, verification SHOULD also check semantic agreement among:
+
+```text
+claim
+mechanism
+verification evidence
+canonical state
+```
+
+Green automated tests alone do not prove that a human-readable capability, status or handoff claim accurately describes what was tested.
+
+If a claim overreaches the mechanism or evidence, the claim SHOULD be narrowed or the mechanism improved before closure.
 
 ### DELTA
 
 Record only material state changes needed for continuation.
 
 Do not turn every trivial action into a persistent write.
+
+Narrative state MUST NOT silently replace a conflicting canonical source. If the canonical source is stale, update it explicitly and preserve the evidence justifying the change.
 
 ## 14. Boot and recovery
 
@@ -557,10 +598,14 @@ Which mutable checkout belongs to which workstream?
 Which waits are local versus global?
 What dependencies are unsatisfied?
 How durable is unfinished work?
+What tracked/untracked local state exists?
+Does ownership or sensitivity affect safe mutation?
 What may I safely execute next?
 ```
 
 If unfinished dirty or uncertain mutable state may exist after executor loss, recovery SHOULD enter or treat the workstream as RECOVERY_REQUIRED before ordinary mutation resumes.
+
+Session/UI labels such as `uncommitted changes`, progress counters or remembered branch state are observations, not canonical truth. They SHOULD be reconciled against the VCS/workspace before mutation when they conflict with observed state.
 
 ## 15. Abrupt interruption and takeover
 
@@ -570,16 +615,30 @@ For RECOVERY_REQUIRED work, a recovery agent SHOULD:
 
 ```text
 1. read canonical goal/workstream and portfolio state
-2. inspect real workspace branch, HEAD and dirtiness
-3. preserve unfinished state exactly as found
-4. compare observed state with the last checkpoint
-5. classify durability and unresolved uncertainty
-6. run proportionate verification when practical
-7. record takeover with a new lease generation
-8. continue from the smallest verified next action
+2. inspect real workspace branch, HEAD, tracked state and untracked state
+3. preserve unfinished mutable state exactly as found
+4. compare observed state with the last durable checkpoint
+5. classify ownership, sensitivity, durability and unresolved uncertainty when relevant
+6. reconstruct interrupted intent from canonical state + observed diff, not agent recollection alone
+7. run proportionate verification when practical
+8. record takeover with a new lease generation
+9. continue from the smallest verified next action
+10. promote durability only after the corresponding checkpoint/artifact exists and is verified
 ```
 
 A recovery agent MUST NOT use destructive workspace normalization merely to obtain a clean status or simplify takeover.
+
+A useful durability promotion sequence is:
+
+```text
+HOST_DURABLE dirty work
+-> verified local checkpoint
+-> REPO_DURABLE
+-> verified remote checkpoint/artifact
+-> REMOTE_DURABLE
+```
+
+An older REMOTE_DURABLE checkpoint MUST NOT automatically upgrade newer local edits.
 
 ## 16. Evidence precedence
 
@@ -602,6 +661,10 @@ production/runtime behavior
 CONSTITUTION remains authoritative for project policy and authority.
 
 Recorded lease, checkout and dirty-state metadata is last-known coordination evidence. Current observed workspace state takes precedence when the two conflict.
+
+Session/UI labels are weaker observations than direct VCS/workspace inspection.
+
+Human-readable narrative may identify that canonical state is stale, but it MUST NOT silently become the new canonical state without an explicit state update or equivalent reconciliation.
 
 ## 17. Human interruption policy
 
@@ -688,6 +751,8 @@ In this reference representation:
 - local checkout claims live outside committed project state, preferably in a local VCS/runtime registry.
 
 JSON is a reference implementation choice because it is deterministic and easy to validate. Other conforming implementations MAY use different representations.
+
+The richer tracked/untracked/ownership/sensitivity workspace observation profile is recovery guidance and does not require new committed fields in the reference JSON schema.
 
 ## 22. Backward compatibility and migration
 
@@ -827,6 +892,22 @@ A v0.1.x single ACTIVE_GOAL remains recoverable without mandatory migration.
 ### C10. Reversible cutover
 
 A copy-first migration can return to the unchanged legacy representation before irreversible divergence.
+
+### C11. Session/UI disagreement
+
+A session/UI `uncommitted` claim that conflicts with direct VCS observation is reconciled read-only before mutation; the agent does not invent, reset or discard work merely to make the two views agree.
+
+### C12. Foreign untracked / sensitive local state
+
+Tracked-clean state with foreign or sensitive untracked artifacts is not treated as an empty workspace, and broad staging/cleanup does not capture or destroy foreign local state.
+
+### C13. Durability promotion
+
+An older REMOTE_DURABLE checkpoint and newer HOST_DURABLE edits remain distinguished through recovery. The newer edits become REPO_DURABLE only after a verified local checkpoint and REMOTE_DURABLE only after a verified remote artifact.
+
+### C14. Claim consistency
+
+A durable human-readable claim is semantically consistent with the mechanism, verification evidence and canonical state, or is narrowed before closure.
 
 Passing a scenario demonstrates behavior only under the tested conditions. It does not establish universal superiority.
 
