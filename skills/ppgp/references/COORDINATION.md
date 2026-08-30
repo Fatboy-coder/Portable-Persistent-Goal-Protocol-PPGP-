@@ -10,7 +10,9 @@ Typical triggers:
 - multiple Git worktrees or isolated clones;
 - a workstream reported blocked while independent work may remain;
 - abrupt executor unavailability;
-- takeover of unfinished mutable work.
+- takeover of unfinished mutable work;
+- a session/UI diff claim that conflicts with observed VCS state;
+- untracked local artifacts whose ownership or sensitivity matters to safe mutation.
 
 For ordinary single-workstream execution, the normal PPGP reference is sufficient.
 
@@ -29,6 +31,8 @@ blocked action != blocked workstream
 blocked workstream != blocked project
 executor unavailable != workstream blocked
 ```
+
+A narrative claim, UI label, or remembered state MUST NOT silently supersede observed canonical state.
 
 ## Coordination model
 
@@ -118,11 +122,23 @@ Before mutation inspect, when available:
 ```text
 branch
 HEAD
-dirty state
+tracked changes
+untracked local state
 worktree list
 existing claim
 current lease
 ```
+
+When recovery risk matters, do not reduce workspace state to one ambiguous `clean/dirty` boolean. Observe or classify, where practical:
+
+```text
+tracked      = CLEAN | DIRTY | UNKNOWN
+untracked    = NONE | PRESENT | UNKNOWN
+ownership    = SELF | FOREIGN | MIXED | UNKNOWN
+sensitivity  = NORMAL | SENSITIVE | UNKNOWN
+```
+
+This is an observation profile, not a mandatory persisted schema. The purpose is to distinguish cases such as a clean tracked tree with foreign sensitive untracked artifacts from a truly empty workspace.
 
 If a shared checkout contains foreign dirty work, do not by default:
 
@@ -135,6 +151,8 @@ commit foreign work
 overwrite
 repurpose
 ```
+
+If foreign or sensitive untracked state is present, broad staging commands SHOULD be avoided. Prefer explicit pathspecs and inspect the staged-file set before commit. Foreign work, secrets, private keys, generated bundles, or unrelated workstream artifacts MUST NOT be staged merely because they share a checkout.
 
 Prefer an isolated workspace when safely available.
 
@@ -204,6 +222,41 @@ Examples:
 
 Do not assume HOST_DURABLE work survives host loss.
 
+Durability is attached to the specific recovery artifact, not automatically to the whole workstream. A pushed checkpoint can be REMOTE_DURABLE while newer local edits remain only HOST_DURABLE.
+
+Promote durability only after the corresponding artifact actually exists and is verified. A useful recovery promotion is:
+
+```text
+HOST_DURABLE dirty work
+-> inspect against last checkpoint
+-> verify
+-> commit/checkpoint
+-> REPO_DURABLE
+-> push/remote artifact verification
+-> REMOTE_DURABLE
+```
+
+Do not relabel local work as REMOTE_DURABLE merely because an older remote checkpoint exists.
+
+## Evidence consistency
+
+Verification includes semantic consistency, not only green tests.
+
+When a durable human-readable claim matters, check that:
+
+```text
+claim
+== mechanism
+== verification evidence
+== canonical state
+```
+
+The equality is semantic, not textual.
+
+If a sentence overstates the mechanism, either narrow the claim or improve the mechanism before closure. Narrative state MUST NOT silently replace a conflicting canonical source.
+
+Session/UI labels such as `uncommitted changes`, progress counters, or remembered branch state are observations, not canonical truth. Reconcile them against the VCS/workspace before mutation.
+
 ## Cooperative handoff
 
 Before releasing execution when possible:
@@ -232,15 +285,19 @@ Then:
 ```text
 1. read portfolio + goal state
 2. inspect real workspace
-3. preserve dirty state exactly as found
-4. compare with last checkpoint
-5. classify durability/uncertainty
-6. verify proportionately
-7. record takeover/new lease generation
-8. continue smallest verified next action
+3. preserve mutable state exactly as found
+4. compare with the last durable checkpoint
+5. classify tracked/untracked state, ownership, sensitivity, durability and uncertainty
+6. reconstruct interrupted intent from canonical state + observed diff, not agent recollection alone
+7. verify proportionately
+8. record takeover/new lease generation
+9. continue the smallest verified next action
+10. promote durability only when the new checkpoint is actually created and verified
 ```
 
 Do not normalize with destructive Git operations merely to obtain a clean status.
+
+If the returning executor finds the VCS clean despite a UI/session claim of uncommitted changes, classify that discrepancy explicitly rather than inventing or discarding work.
 
 ## Project scheduler rule
 
@@ -259,6 +316,6 @@ Human escalation remains scoped to the genuine authority boundary.
 
 Do not preload this reference for every PPGP operation.
 
-Load it when concurrency, ownership ambiguity, partial blocking, or takeover actually appears.
+Load it when concurrency, ownership ambiguity, partial blocking, takeover, or conflicting workspace evidence actually appears.
 
 The coordination layer should cost close to zero tokens in simple single-workstream repositories.
