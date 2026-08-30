@@ -29,6 +29,7 @@
   "files": [
     "bin/",
     "skills/",
+    "schemas/",
     "scripts/benchmark-report.js",
     "scripts/prepare-pilot-01.js",
     "benchmarks/",
@@ -43,7 +44,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/cli.test.js && node test/benchmark.test.js && node test/package.test.js",
+    "test": "node test/cli.test.js && node test/v020.test.js && node test/benchmark.test.js && node test/package.test.js",
     "benchmark:report": "node scripts/benchmark-report.js",
     "benchmark:prepare:pilot-01": "node scripts/prepare-pilot-01.js",
     "prepublishOnly": "npm test"
